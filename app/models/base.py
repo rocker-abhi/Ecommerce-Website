@@ -1,0 +1,5 @@
+# importing libraries
+from sqlalchemy.orm import DeclarativeBase
+
+class BaseModel(DeclarativeBase):
+    pass
