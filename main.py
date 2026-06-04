@@ -21,9 +21,13 @@ else:
     raise RuntimeError(f"Unknown environment {current_dev_environment}")
 
 from app.config import get_config
+from app.utils.database import init_database
 
 if __name__ == '__main__':
     current_env_config = get_config(current_dev_environment) # getting the configuration of the current environment
+
+    # Initialize shared database instance (called once at startup)
+    init_database(current_env_config.DATABASE_URI)
 
     if current_dev_environment == 'development':
         # if environment is development then show all the configuration values in the console
