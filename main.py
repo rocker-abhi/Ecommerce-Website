@@ -2,11 +2,13 @@
 from flask import Flask
 import dotenv
 from app.utils.logger import configure_logger
+from app.routes import auth_bp
 
 app = Flask(__name__) # create flask app
 configure_logger("INFO")
 
 current_dev_environment = "development" # setting the current development environment
+app.config['current_env'] = current_dev_environment
 
 if current_dev_environment == "development":
     # loading development environment
@@ -28,6 +30,9 @@ if __name__ == '__main__':
 
     # Initialize shared database instance (called once at startup)
     init_database(current_env_config.DATABASE_URI)
+
+    # Registering Blueprint to the Flask app
+    app.register_blueprint(auth_bp)
 
     if current_dev_environment == 'development':
         # if environment is development then show all the configuration values in the console

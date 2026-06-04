@@ -1,0 +1,58 @@
+2026-06-04 16:24:24 | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-04 16:24:24 | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-04 16:24:24 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 16:24:25 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 16:24:25 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 16:27:07 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 16:27:07] "[33mGET / HTTP/1.1[0m" 404 -
+2026-06-04 16:27:13 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 16:27:13] "[33mPOST / HTTP/1.1[0m" 404 -
+2026-06-04 16:27:28 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 16:27:28] "POST /auth/login HTTP/1.1" 200 -
+2026-06-04 16:32:25 | INFO | werkzeug | _internal.py:97 |  * Detected change in 'D:\\Practice Project\\Ecommerce Website\\app\\routes\\auth_routes\\authAPI.py', reloading
+2026-06-04 16:32:26 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 16:32:26 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 16:32:26 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 16:32:47 | INFO | werkzeug | _internal.py:97 |  * Detected change in 'D:\\Practice Project\\Ecommerce Website\\app\\routes\\auth_routes\\authAPI.py', reloading
+2026-06-04 16:32:47 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 16:32:47 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 16:32:47 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 16:33:55 | INFO | werkzeug | _internal.py:97 |  * Detected change in 'D:\\Practice Project\\Ecommerce Website\\app\\routes\\auth_routes\\authAPI.py', reloading
+2026-06-04 16:33:55 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 16:33:56 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 16:33:56 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 16:34:01 | INFO | app.routes.auth_routes.authAPI | authAPI.py:9 | {'name': 'abhishek', 'password': 'admin@123'}
+2026-06-04 16:34:01 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 16:34:01] "POST /auth/login HTTP/1.1" 200 -
+2026-06-04 16:34:13 | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-04 16:34:13 | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-04 16:34:13 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 16:34:14 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 16:34:14 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 16:34:17 | INFO | app.routes.auth_routes.authAPI | authAPI.py:9 | {'name': 'abhishek', 'password': 'admin@123'}
+2026-06-04 16:34:17 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 16:34:17] "POST /auth/login HTTP/1.1" 200 -
+2026-06-04 17:16:02 | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-04 17:16:02 | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-04 17:16:02 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 17:16:03 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 17:16:03 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 17:16:10 | ERROR | app.routes.auth_routes.authAPI | authAPI.py:16 | {'username': ['Username is required.'], 'name': ['Unknown field.']}
+2026-06-04 17:16:10 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 17:16:10] "[35m[1mPOST /auth/login HTTP/1.1[0m" 500 -
+2026-06-04 17:16:26 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 17:16:26] "POST /auth/login HTTP/1.1" 200 -
+2026-06-04 17:18:46 | INFO | werkzeug | _internal.py:97 |  * Detected change in 'D:\\Practice Project\\Ecommerce Website\\main.py', reloading
+2026-06-04 17:18:47 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 17:25:13 | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-04 17:25:13 | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-04 17:25:13 | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-04 17:25:14 | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-04 17:25:14 | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 650-488-396
+2026-06-04 17:25:40 | INFO | root | authAPI.py:15 | Received login request with data: {'username': 'abhishek'}
+2026-06-04 17:25:40 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [04/Jun/2026 17:25:40] "POST /auth/login HTTP/1.1" 200 -
