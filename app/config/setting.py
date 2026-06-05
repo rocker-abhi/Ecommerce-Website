@@ -20,4 +20,5 @@ class BaseConfig:
     PORT = validate_config('PORT', required=True)
     DEBUG = validate_config('DEBUG', required=True)
     DATABASE_URI = validate_config('DATABASE_URI', required=True)
+    JWT_SECRET = validate_config('JWT_SECRET', required=True)
 

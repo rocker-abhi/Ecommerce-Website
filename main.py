@@ -3,6 +3,7 @@ from flask import Flask
 import dotenv
 from app.utils.logger import configure_logger
 from app.routes import auth_bp
+from app.utils.jwt_utility import JwtHelper
 
 app = Flask(__name__) # create flask app
 configure_logger("INFO")
@@ -30,6 +31,7 @@ if __name__ == '__main__':
 
     # Initialize shared database instance (called once at startup)
     init_database(current_env_config.DATABASE_URI)
+    JwtHelper.load_jwt_secret(current_env_config.JWT_SECRET)  # Load JWT secret key at startup
 
     # Registering Blueprint to the Flask app
     app.register_blueprint(auth_bp)
