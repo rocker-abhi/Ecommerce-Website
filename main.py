@@ -1,11 +1,13 @@
 # importing libraries
-from flask import Flask
+from flask import Flask, g
 import dotenv
 from app.utils.logger import configure_logger
 from app.routes import auth_bp
 from app.utils.jwt_utility import JwtHelper
+from app.utils.request_hooks import register_request_hook
 
 app = Flask(__name__) # create flask app
+register_request_hook(app)
 configure_logger("INFO")
 
 current_dev_environment = "development" # setting the current development environment
@@ -24,13 +26,13 @@ else:
     raise RuntimeError(f"Unknown environment {current_dev_environment}")
 
 from app.config import get_config
-from app.utils.database import init_database
+from app.utils.database import DatabaseHelper
 
 if __name__ == '__main__':
     current_env_config = get_config(current_dev_environment) # getting the configuration of the current environment
 
     # Initialize shared database instance (called once at startup)
-    init_database(current_env_config.DATABASE_URI)
+    DatabaseHelper.init_database(current_env_config.DATABASE_URI)
     JwtHelper.load_jwt_secret(current_env_config.JWT_SECRET)  # Load JWT secret key at startup
 
     # Registering Blueprint to the Flask app

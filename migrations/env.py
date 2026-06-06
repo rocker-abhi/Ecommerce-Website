@@ -31,6 +31,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.models.base import BaseModel
 from app.models.user import UserModel
+from app.models.jwtTokens import RefreshToken
 
 target_metadata = BaseModel.metadata
 

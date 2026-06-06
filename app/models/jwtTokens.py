@@ -1,5 +1,5 @@
-from psycopg2._psycopg import Column
-from sqlalchemy import column, Integer, Uuid, String, DateTime, ForeignKey
+
+from sqlalchemy import Column, Uuid, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
