@@ -16,6 +16,29 @@ import sys
 import subprocess
 from pathlib import Path
 import dotenv
+from sqlalchemy import create_engine, text
+
+
+def test_database_connection(database_url: str) -> bool:
+    """Test database connection before running migrations.
+
+    Args:
+        database_url: Database connection URL
+
+    Returns:
+        True if connection successful, False otherwise
+    """
+    try:
+        print("Testing database connection...")
+        engine = create_engine(database_url, echo=False)
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        print("✓ Database connection successful!")
+        engine.dispose()
+        return True
+    except Exception as e:
+        print(f"✗ Database connection failed: {e}")
+        return False
 
 
 def main():
@@ -41,6 +64,16 @@ def main():
     # Load environment variables from .env file
     print(f"Loading environment from: {env_file}")
     dotenv.load_dotenv(str(env_file))
+
+    # Test database connection before running migrations
+    database_url = os.getenv('DATABASE_URI')
+    if not database_url:
+        print("Error: DATABASE_URI environment variable not set")
+        sys.exit(1)
+
+    if not test_database_connection(database_url):
+        print("Error: Cannot proceed with migrations - database connection failed")
+        sys.exit(1)
 
     # Run alembic with remaining command-line arguments
     alembic_args = [sys.executable, "-m", "alembic"] + sys.argv[1:]
