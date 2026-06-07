@@ -1,1 +1,96 @@
-/.venv
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Environment Configuration Files (Sensitive Data)
+.env.dev
+.env.prod
+.env.stage
+.env.local
+.env.*.local
+
+# IDE and Editor
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# OS Files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary Files
+*.bak
+*.tmp
+*.temp
+.~*
+*~
+
+# Type Checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Linting
+.pylint.d/
+.ruff_cache/
+
+# IDE Temporary Files
+.classpath
+
+# Misc
+.env.bak
+*.pem
+*.key
