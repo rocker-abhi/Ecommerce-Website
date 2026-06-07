@@ -68,3 +68,161 @@
 2026-06-07 00:17:39 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
 2026-06-07 00:17:40 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
 2026-06-07 00:17:40 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 130-559-997
+2026-06-07 14:40:31 | - | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-07 14:40:31 | - | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-07 14:40:31 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:40:31 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:40:31 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:45:05 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/exceptions/base.py', reloading
+2026-06-07 14:45:05 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:45:05 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:45:05 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:46:45 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/services/authService.py', reloading
+2026-06-07 14:46:45 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:46:46 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:46:46 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:47:11 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/services/authService.py', reloading
+2026-06-07 14:47:11 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:47:11 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:47:11 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:47:22 | 837d5414-1c10-468d-a305-e75eaab2cae6 | ERROR | app.routes.authAPI | authAPI.py:35 | Login error: User not found
+2026-06-07 14:47:22 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:47:22] "[35m[1mPOST /auth/login HTTP/1.1[0m" 500 -
+2026-06-07 14:48:46 | c1c1d8d0-1af5-4871-829f-5afb4694a7ab | ERROR | app.routes.authAPI | authAPI.py:35 | Login error: User not found
+2026-06-07 14:48:46 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:48:46] "[35m[1mPOST /auth/login HTTP/1.1[0m" 500 -
+2026-06-07 14:49:22 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py', reloading
+2026-06-07 14:49:22 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:49:38 | - | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-07 14:49:38 | - | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-07 14:49:38 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:49:39 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:49:39 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:49:41 | fea88f4f-a7b7-4829-a1be-6d3c2d0fbe82 | WARNING | app.exceptions.global_exception_handler | global_exception_handler.py:12 | USER_NOT_FOUND: User not found
+2026-06-07 14:49:41 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:49:41] "[33mPOST /auth/login HTTP/1.1[0m" 404 -
+2026-06-07 14:50:03 | ebffee76-2103-439f-b115-9a8e4843feb9 | WARNING | app.exceptions.global_exception_handler | global_exception_handler.py:12 | USER_NOT_FOUND: User not found
+2026-06-07 14:50:03 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:50:03] "[33mPOST /auth/login HTTP/1.1[0m" 404 -
+2026-06-07 14:50:57 | 21ea1f62-dc3f-4a44-a37b-01dc6a013445 | WARNING | app.exceptions.global_exception_handler | global_exception_handler.py:12 | USER_NOT_FOUND: User not found
+2026-06-07 14:50:57 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:50:57] "[33mPOST /auth/login HTTP/1.1[0m" 404 -
+2026-06-07 14:50:58 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py', reloading
+2026-06-07 14:50:58 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:50:58 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:50:58 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:51:10 | 52352760-0129-44b2-9121-d38516810c1f | ERROR | app.exceptions.global_exception_handler | global_exception_handler.py:30 | Unhandled exception occurred
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py", line 19, in login
+    validated_data = schema.load(data)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 735, in load
+    return self._do_load(
+           ~~~~~~~~~~~~~^
+        data, many=many, partial=partial, unknown=unknown, postprocess=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 943, in _do_load
+    raise exc
+marshmallow.exceptions.ValidationError: {'email': ['Email format is invalid.']}
+2026-06-07 14:51:10 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:51:10] "[35m[1mPOST /auth/login HTTP/1.1[0m" 500 -
+2026-06-07 14:51:20 | - | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-07 14:51:20 | - | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-07 14:51:20 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:51:20 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:51:20 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:51:23 | 4746d220-71b9-4c69-96b9-42165b7b5684 | ERROR | app.exceptions.global_exception_handler | global_exception_handler.py:30 | Unhandled exception occurred
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py", line 19, in login
+    validated_data = schema.load(data)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 735, in load
+    return self._do_load(
+           ~~~~~~~~~~~~~^
+        data, many=many, partial=partial, unknown=unknown, postprocess=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 943, in _do_load
+    raise exc
+marshmallow.exceptions.ValidationError: {'email': ['Email format is invalid.']}
+2026-06-07 14:51:23 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:51:23] "[35m[1mPOST /auth/login HTTP/1.1[0m" 500 -
+2026-06-07 14:53:27 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/exceptions/global_exception_handler.py', reloading
+2026-06-07 14:53:28 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:53:28 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:53:28 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:54:48 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/exceptions/global_exception_handler.py', reloading
+2026-06-07 14:54:48 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:54:48 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:54:48 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:54:54 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/exceptions/global_exception_handler.py', reloading
+2026-06-07 14:54:54 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:54:55 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:54:55 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:55:12 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/exceptions/global_exception_handler.py', reloading
+2026-06-07 14:55:12 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:55:13 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:55:13 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:55:23 | - | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-07 14:55:23 | - | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-07 14:55:23 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-07 14:55:23 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-07 14:55:23 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 107-376-035
+2026-06-07 14:55:30 | 775bd0a5-cf18-4c65-9ef3-b2d45a2359b5 | ERROR | app.exceptions.global_exception_handler | global_exception_handler.py:45 | Validation error: {'email': ['Email format is invalid.']}
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py", line 19, in login
+    validated_data = schema.load(data)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 735, in load
+    return self._do_load(
+           ~~~~~~~~~~~~~^
+        data, many=many, partial=partial, unknown=unknown, postprocess=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 943, in _do_load
+    raise exc
+marshmallow.exceptions.ValidationError: {'email': ['Email format is invalid.']}
+2026-06-07 14:55:30 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:55:30] "[31m[1mPOST /auth/login HTTP/1.1[0m" 400 -
+2026-06-07 14:56:23 | 73bd75c5-73ec-4736-828f-453319562ebe | ERROR | app.exceptions.global_exception_handler | global_exception_handler.py:45 | Validation error: {'email': ['Email format is invalid.']}
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/abhishek/Development/Ecommerce-Website/app/routes/authAPI.py", line 19, in login
+    validated_data = schema.load(data)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 735, in load
+    return self._do_load(
+           ~~~~~~~~~~~~~^
+        data, many=many, partial=partial, unknown=unknown, postprocess=True
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/marshmallow/schema.py", line 943, in _do_load
+    raise exc
+marshmallow.exceptions.ValidationError: {'email': ['Email format is invalid.']}
+2026-06-07 14:56:23 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:56:23] "[31m[1mPOST /auth/login HTTP/1.1[0m" 400 -
+2026-06-07 14:56:34 | 13b2dcff-c62c-448b-8652-93d37a1d66f8 | WARNING | app.exceptions.global_exception_handler | global_exception_handler.py:13 | USER_NOT_FOUND: User not found
+2026-06-07 14:56:34 | - | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [07/Jun/2026 14:56:34] "[33mPOST /auth/login HTTP/1.1[0m" 404 -

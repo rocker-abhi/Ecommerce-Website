@@ -1,5 +1,8 @@
 from app.repository.userRepository import UserRepository
-
+from app.exceptions.auth import (
+    InvalidCredentialsError,
+    UserNotFoundError
+)
 
 class AuthService :
 
@@ -10,4 +13,4 @@ class AuthService :
 
         user = self.user_repository.get_by_email(email)
         if not user:
-            raise InvalidCredentialsError("Invalid email or password")
+            raise UserNotFoundError()

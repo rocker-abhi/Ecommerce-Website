@@ -11,26 +11,22 @@ logger = logging.getLogger(__name__)
 auth_service = AuthService()
 
 def login():
-    try:
-        logger.debug(f"request id: {getattr(g, 'request_id', '-')}")
 
-        schema = RequestLoginSchema()
-        data = request.get_json()
-        validated_data = schema.load(data)
-        email = validated_data.get("email")
-        password = validated_data.get("password")
+    logger.debug(f"request id: {getattr(g, 'request_id', '-')}")
 
-        auth_service.login(email, password)
+    schema = RequestLoginSchema()
+    data = request.get_json()
+    validated_data = schema.load(data)
+    email = validated_data.get("email")
+    password = validated_data.get("password")
 
-        if current_app.config["current_env"] == "development":
-            logger.info(f"Received login request with data: {validated_data}")
+    auth_service.login(email, password)
 
-        return jsonify({"message": "Login successful", "data": validated_data}), 200
+    if current_app.config["current_env"] == "development":
+        logger.info(f"Received login request with data: {validated_data}")
 
-    except ValidationError as ve:
-        logger.warning(f"Validation error: {ve.messages}")
-        return jsonify({"error": "Validation failed", "details": ve.messages}), 400
+    return jsonify({"message": "Login successful", "data": validated_data}), 200
 
-    except Exception as e:
-        logger.error(f"Login error: {str(e)}")
-        return jsonify({"error": "An error occurred while processing the request"}), 500
+    # except ValidationError as ve:
+    #     logger.warning(f"Validation error: {ve.messages}")
+    #     return jsonify({"error": "Validation failed", "details": ve.messages}), 400

@@ -5,10 +5,13 @@ from app.utils.logger import configure_logger
 from app.routes import auth_bp
 from app.utils.jwt_utility import JwtHelper
 from app.utils.request_hooks import register_request_hook
+from app.exceptions.global_exception_handler import register_exception_handlers
 
 app = Flask(__name__) # create flask app
 register_request_hook(app)
 configure_logger("INFO")
+register_exception_handlers(app)
+
 
 current_dev_environment = "development" # setting the current development environment
 app.config['current_env'] = current_dev_environment
