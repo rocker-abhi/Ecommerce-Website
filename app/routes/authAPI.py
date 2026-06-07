@@ -1,9 +1,8 @@
 # importing library
-from flask import request, g, jsonify
+from flask import request, g, jsonify, make_response
 import logging
 from flask import current_app
-from app.validators.login_validator import RequestLoginSchema
-from marshmallow import ValidationError
+from app.validators.login_validator import RequestLoginSchema, ResponseLoginSchema
 from app.services.authService import AuthService
 
 logger = logging.getLogger(__name__)
@@ -14,19 +13,25 @@ def login():
 
     logger.debug(f"request id: {getattr(g, 'request_id', '-')}")
 
-    schema = RequestLoginSchema()
+    request_schema = RequestLoginSchema()
     data = request.get_json()
-    validated_data = schema.load(data)
+    validated_data = request_schema.load(data)
     email = validated_data.get("email")
     password = validated_data.get("password")
 
-    auth_service.login(email, password)
+    tokens_data = auth_service.login(email, password)
+    response_schema = ResponseLoginSchema()
+    response_schema.validate(tokens_data)
+    response_data = response_schema.dump(tokens_data)
+
 
     if current_app.config["current_env"] == "development":
-        logger.info(f"Received login request with data: {validated_data}")
+        logger.info(f"Received login request with data: {response_data}")
 
-    return jsonify({"message": "Login successful", "data": validated_data}), 200
+    response = make_response()
+    response.success = True
+    response.status_code = 200
+    response.data = jsonify({response_data})
+    return response
 
-    # except ValidationError as ve:
-    #     logger.warning(f"Validation error: {ve.messages}")
-    #     return jsonify({"error": "Validation failed", "details": ve.messages}), 400
+

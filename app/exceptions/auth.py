@@ -1,3 +1,5 @@
+from email import message
+
 from app.exceptions.base import AppException
 
 class InvalidCredentialsError(AppException):
@@ -15,3 +17,12 @@ class UserNotFoundError(AppException):
             error_code="USER_NOT_FOUND",
             status_code=404
         )
+
+class UserIsDeactivated(AppException):
+    def __init__(self):
+        super().__init__(
+            message="User is Deactivated",
+            error_code="USER_IS_DEACTIVATED",
+            status_code=403
+        )
+
