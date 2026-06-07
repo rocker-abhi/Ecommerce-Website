@@ -113,3 +113,76 @@
 2026-06-06 16:02:46 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [06/Jun/2026 16:02:46] "POST /auth/login HTTP/1.1" 200 -
 2026-06-06 16:03:00 | INFO | app.routes.auth_routes.authAPI | authAPI.py:17 | Received login request with data: {'username': 'admin', 'password': 'admin@123'}
 2026-06-06 16:03:00 | INFO | werkzeug | _internal.py:97 | 127.0.0.1 - - [06/Jun/2026 16:03:00] "POST /auth/login HTTP/1.1" 200 -
+2026-06-06 23:05:32 | - | INFO | test | <stdin>:5 | This is a test log without request context
+2026-06-06 23:05:43 | 88e877bb-2c87-44f2-8ce7-708712945b21 | ERROR | <stdin> | app.py:875 | Exception on / [GET]
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/database.py", line 51, in get_db_session
+    raise RuntimeError("Session is not created")
+RuntimeError: Session is not created
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/request_hooks.py", line 16, in before_request
+    Session = DatabaseHelper.get_db_session()
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/database.py", line 54, in get_db_session
+    raise RuntimeError("Session Error")
+RuntimeError: Session Error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/request_hooks.py", line 21, in before_request
+    raise RuntimeError("unable to establish the connection with the database")
+RuntimeError: unable to establish the connection with the database
+2026-06-06 23:07:16 | 7ccb645f-828c-4a92-849c-35688ccfe65c | ERROR | <stdin> | app.py:875 | Exception on / [GET]
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/database.py", line 51, in get_db_session
+    raise RuntimeError("Session is not created")
+RuntimeError: Session is not created
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/request_hooks.py", line 16, in before_request
+    Session = DatabaseHelper.get_db_session()
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/database.py", line 54, in get_db_session
+    raise RuntimeError("Session Error")
+RuntimeError: Session Error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/abhishek/Development/Ecommerce-Website/.venv/lib/python3.14/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/abhishek/Development/Ecommerce-Website/app/utils/request_hooks.py", line 21, in before_request
+    raise RuntimeError("unable to establish the connection with the database")
+RuntimeError: unable to establish the connection with the database
+2026-06-06 23:07:28 | - | INFO | werkzeug | _internal.py:97 | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.17:5000
+2026-06-06 23:07:28 | - | INFO | werkzeug | _internal.py:97 | [33mPress CTRL+C to quit[0m
+2026-06-06 23:07:28 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-06 23:07:28 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-06 23:07:28 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 130-559-997
+2026-06-06 23:10:16 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/routes/auth_routes/validators/login_validator.py', reloading
+2026-06-06 23:10:16 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat
+2026-06-06 23:10:17 | - | WARNING | werkzeug | _internal.py:97 |  * Debugger is active!
+2026-06-06 23:10:17 | - | INFO | werkzeug | _internal.py:97 |  * Debugger PIN: 130-559-997
+2026-06-06 23:11:09 | - | INFO | werkzeug | _internal.py:97 |  * Detected change in '/home/abhishek/Development/Ecommerce-Website/app/routes/auth_routes/authAPI.py', reloading
+2026-06-06 23:11:09 | - | INFO | werkzeug | _internal.py:97 |  * Restarting with stat

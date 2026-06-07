@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.routes.auth_routes.authAPI import login
+from app.routes.authAPI import login
 
 # creating Blueprint for the current File
 auth_bp = Blueprint('auth', __name__, url_prefix="/auth")

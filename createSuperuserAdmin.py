@@ -2,8 +2,8 @@
 Script to create a superuser admin.
 
 Usage:
-    python createSuperuserAdmin.py <username> <password>
-    python createSuperuserAdmin.py abhishek admin@123
+    python createSuperuserAdmin.py <email> <password>
+    python createSuperuserAdmin.py admin@example.com admin@123
 
 Environment:
     Set ENV environment variable to specify environment (development, production, staging)
@@ -12,10 +12,10 @@ Environment:
 import os
 import sys
 import io
+import re
 import dotenv
 from pathlib import Path
-from sqlalchemy.orm import Session
-from app.utils.database import Database
+from app.utils.database import DatabaseHelper
 from app.models.user import UserModel, UserEnum
 
 # Fix encoding for Windows
@@ -46,7 +46,7 @@ def load_environment():
     print(f"✓ Loaded environment from: {env_file}")
 
 
-def create_superuser(username, password):
+def create_superuser(email, password):
     """Create a superuser admin in the database."""
 
     # Get database URL from environment
@@ -55,22 +55,29 @@ def create_superuser(username, password):
         print("Error: DATABASE_URI environment variable not set")
         sys.exit(1)
 
-    # Initialize database connection
-    db = Database(database_url)
-    session = db.session_factory()
+    # Initialize database connection if not already done
+    try:
+        DatabaseHelper.init_database(database_url)
+    except Exception:
+        # If init fails, it might already be initialized, which is fine
+        pass
 
     try:
+        # Get a session
+        SessionFactory = DatabaseHelper.get_db_session()
+        session = SessionFactory()
+
         # Check if user already exists
-        existing_user = session.query(UserModel).filter_by(email=username).first()
+        existing_user = session.query(UserModel).filter_by(email=email).first()
         if existing_user:
-            print(f"Error: User with email '{username}' already exists")
+            print(f"Error: User with email '{email}' already exists")
             session.close()
             return False
 
         # Create new admin user
         admin_user = UserModel(
-            name=username,
-            email=username,
+            name=email.split('@')[0],  # Use email prefix as name
+            email=email,
             password=password,  # Will be hashed by hash_password method
             userType=UserEnum.admin,
             is_active=True,
@@ -85,7 +92,7 @@ def create_superuser(username, password):
         session.commit()
 
         print(f"✓ Superuser admin created successfully!")
-        print(f"  Email: {username}")
+        print(f"  Email: {email}")
         print(f"  Type: admin")
         print(f"  Status: active")
         print(f"  ID: {admin_user.id}")
@@ -94,10 +101,19 @@ def create_superuser(username, password):
         return True
 
     except Exception as e:
-        session.rollback()
         print(f"Error: Failed to create superuser - {str(e)}")
-        session.close()
+        try:
+            session.rollback()
+            session.close()
+        except Exception:
+            pass
         return False
+
+
+def validate_email(email):
+    """Validate email format."""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
 
 
 def main():
@@ -105,29 +121,35 @@ def main():
 
     # Validate command-line arguments
     if len(sys.argv) != 3:
-        print("Usage: python createSuperuserAdmin.py <username> <password>")
-        print("Example: python createSuperuserAdmin.py abhishek admin@123")
+        print("Usage: python createSuperuserAdmin.py <email> <password>")
+        print("Example: python createSuperuserAdmin.py admin@example.com admin@123")
         sys.exit(1)
 
-    username = sys.argv[1]
+    email = sys.argv[1]
     password = sys.argv[2]
 
     # Validate inputs
-    if not username or not password:
-        print("Error: Username and password cannot be empty")
+    if not email or not password:
+        print("Error: Email and password cannot be empty")
         sys.exit(1)
 
-    if "@" not in username:
-        print("Warning: Username should be a valid email address")
+    if not validate_email(email):
+        print("Error: Invalid email format")
+        sys.exit(1)
 
     if len(password) < 6:
-        print("Warning: Password should be at least 6 characters long")
+        print("Error: Password must be at least 6 characters long")
+        sys.exit(1)
+
+    if len(password) > 10:
+        print("Error: Password must not exceed 10 characters long")
+        sys.exit(1)
 
     # Load environment variables
     load_environment()
 
     # Create superuser
-    success = create_superuser(username, password)
+    success = create_superuser(email, password)
 
     sys.exit(0 if success else 1)
 

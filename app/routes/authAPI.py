@@ -1,17 +1,26 @@
+# importing library
 from flask import request, g, jsonify
 import logging
-from app.routes.auth_routes.validators.login_validator import RequestLoginSchema
 from flask import current_app
+from app.validators.login_validator import RequestLoginSchema
 from marshmallow import ValidationError
+from app.services.authService import AuthService
 
 logger = logging.getLogger(__name__)
 
+auth_service = AuthService()
+
 def login():
     try:
-        print(f'request id : {g.request_id}')
-        data = request.get_json()
+        logger.debug(f"request id: {getattr(g, 'request_id', '-')}")
+
         schema = RequestLoginSchema()
+        data = request.get_json()
         validated_data = schema.load(data)
+        email = validated_data.get("email")
+        password = validated_data.get("password")
+
+        auth_service.login(email, password)
 
         if current_app.config["current_env"] == "development":
             logger.info(f"Received login request with data: {validated_data}")
