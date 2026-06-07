@@ -31,6 +31,10 @@ class RequestLoginSchema(Schema):
             raise ValidationError("Password cannot contain spaces.")
 
 
+class ResponseLoginSchema(Schema):
+    access_token = fields.Str(required=True)
+    refresh_token = fields.Str(required=True)
+
 if __name__ == "__main__":
     from flask import jsonify
     schema = RequestLoginSchema()

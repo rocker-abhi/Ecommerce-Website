@@ -63,7 +63,10 @@ htmlcov/
 *.sqlite
 *.sqlite3
 *.log
-logs/
+
+# Logs - ignore files inside logs/ but keep the folder
+logs/*
+!logs/.gitkeep
 
 # OS Files
 Thumbs.db
