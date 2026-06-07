@@ -24,14 +24,17 @@ def login():
     response_schema.validate(tokens_data)
     response_data = response_schema.dump(tokens_data)
 
+    response_payload = {
+        "success": True,
+        "message": "Login successful",
+        "data": response_data
+    }
 
     if current_app.config["current_env"] == "development":
-        logger.info(f"Received login request with data: {response_data}")
+        logger.info(f"Received login request with data: {response_payload}")
 
-    response = make_response()
+    response = make_response(jsonify(response_payload))
     response.success = True
-    response.status_code = 200
-    response.data = jsonify({response_data})
     return response
 
 
