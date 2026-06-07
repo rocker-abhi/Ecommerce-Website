@@ -94,3 +94,9 @@ dmypy.json
 .env.bak
 *.pem
 *.key
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
