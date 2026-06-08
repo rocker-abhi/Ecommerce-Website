@@ -31,12 +31,21 @@ class AuthService:
 
         return {"access_token": token, "refresh_token": refresh_token}
 
-    def create_user(self, name, age, password, email, user_type):
+    def create_user(self, name, age, password, email, user_type, address_data=None):
         user = self.user_repository.get_by_email(email)
         if user:
             raise UserAlreadyExist()
 
-        new_user = UserModel(name=name, age=age, email=email, userType=user_type)
+        address_data = address_data or {}
+        new_user = UserModel(
+            name=name,
+            age=age,
+            email=email,
+            userType=user_type,
+            city=address_data.get("city"),
+            state=address_data.get("state"),
+            country=address_data.get("country"),
+        )
         new_user.hash_password(password)
         new_user.activate_user(status=True)
         user = self.user_repository.create_user(new_user)

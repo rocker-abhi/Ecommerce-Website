@@ -28,8 +28,19 @@ class UserModel(BaseModel):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow())
     google_id = Column(String(255), unique=True, nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    country = Column(String(100), nullable=True)
 
     __table_args__ = (CheckConstraint("age >= 18 and age < 80", name="check_age"),)
+
+    @property
+    def address(self):
+        return {
+            "city": self.city,
+            "state": self.state,
+            "country": self.country
+        }
 
     def hash_password(self, password):
         self.password = generate_password_hash(password)

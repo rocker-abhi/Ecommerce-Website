@@ -1,6 +1,12 @@
 from marshmallow import Schema, ValidationError, fields, validate, validates
 
 
+class AddressSchema(Schema):
+    city = fields.Str(required=True)
+    state = fields.Str(required=True)
+    country = fields.Str(required=True)
+
+
 class RequestResponseCreateUserSchema(Schema):
     name = fields.Str(
         required=True,
@@ -32,6 +38,8 @@ class RequestResponseCreateUserSchema(Schema):
         ),
     )
 
+    address = fields.Nested(AddressSchema, required=False, allow_none=True)
+
     @validates("password")
     def validate_password(self, value, **kwargs):
         split = value.split(" ")
@@ -45,6 +53,7 @@ class CreateUserDataSchema(Schema):
     age = fields.Int(required=True)
     email = fields.Email(required=True)
     userType = fields.Function(lambda obj: obj.userType.value if hasattr(obj.userType, 'value') else obj.userType)
+    address = fields.Nested(AddressSchema, required=True)
 
 
 class ResponseCreateUserSchema(Schema):

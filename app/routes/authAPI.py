@@ -49,8 +49,9 @@ def create_user():
     password = data.get("password")
     email = data.get("email")
     user_type = data.get("userType")
+    address = data.get("address")
 
-    user = auth_service.create_user(name, age, password, email, user_type)
+    user = auth_service.create_user(name, age, password, email, user_type, address)
     response_schema = ResponseCreateUserSchema()
     response_payload = response_schema.dump({
         "success": True,
