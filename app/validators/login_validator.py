@@ -25,6 +25,12 @@ class RequestLoginSchema(Schema):
             raise ValidationError("Password cannot contain spaces.")
 
 
-class ResponseLoginSchema(Schema):
+class LoginDataSchema(Schema):
     access_token = fields.Str(required=True)
     refresh_token = fields.Str(required=True)
+
+
+class ResponseLoginSchema(Schema):
+    success = fields.Boolean(required=True, allow_none=False)
+    message = fields.Str(required=True, allow_none=False)
+    data = fields.Nested(LoginDataSchema, required=True)

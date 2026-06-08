@@ -39,9 +39,15 @@ class RequestResponseCreateUserSchema(Schema):
             raise ValidationError("Password cannot contain spaces.")
 
 
-class ResponseCreateUserSchema(Schema):
+class CreateUserDataSchema(Schema):
     id = fields.UUID(required=True)
     name = fields.Str(required=True)
     age = fields.Int(required=True)
     email = fields.Email(required=True)
     userType = fields.Function(lambda obj: obj.userType.value if hasattr(obj.userType, 'value') else obj.userType)
+
+
+class ResponseCreateUserSchema(Schema):
+    success = fields.Boolean(required=True, allow_none=False)
+    message = fields.Str(required=True, allow_none=False)
+    data = fields.Nested(CreateUserDataSchema, required=True)

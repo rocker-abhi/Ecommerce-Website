@@ -7,7 +7,7 @@ from app.middleware.jwt_middleware import jwt_required
 from app.services.authService import AuthService
 from app.validators.create_user_validator import RequestResponseCreateUserSchema, ResponseCreateUserSchema
 from app.validators.login_validator import RequestLoginSchema, ResponseLoginSchema
-from app.validators.logout_validator import RequestLogoutSchema
+from app.validators.logout_validator import RequestLogoutSchema, ResponseLogoutSchema
 from app.validators.refresh_token_validatory import RequestRefreshTokenSchema, ResponseRefreshTokenSchema
 
 logger = logging.getLogger(__name__)
@@ -27,14 +27,11 @@ def login():
 
     tokens_data = auth_service.login(email, password)
     response_schema = ResponseLoginSchema()
-    response_schema.validate(tokens_data)
-    response_data = response_schema.dump(tokens_data)
-
-    response_payload = {
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Login successful",
-        "data": response_data,
-    }
+        "data": tokens_data
+    })
 
     if current_app.config["current_env"] == "development":
         logger.info(f"Received login request with data: {response_payload}")
@@ -55,12 +52,11 @@ def create_user():
 
     user = auth_service.create_user(name, age, password, email, user_type)
     response_schema = ResponseCreateUserSchema()
-
-    response_payload = {
+    response_payload = response_schema.dump({
         "success": True,
         "message": "User created successfully",
-        "data": response_schema.dump(user),
-    }
+        "data": user
+    })
 
     if current_app.config["current_env"] == "development":
         logger.info(f"Received create user request with data: {response_payload}")
@@ -77,11 +73,12 @@ def logout():
     user_id = data.get("user_id")
     auth_service.logout(user_id)
 
-    response_payload = {
+    response_schema = ResponseLogoutSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Logged out successfully",
-        "data": {},
-    }
+        "data": {}
+    })
 
     response = make_response(jsonify(response_payload))
     response.success = True
@@ -95,13 +92,11 @@ def refresh_token():
 
     tokens_data = auth_service.refresh_token(refresh_token_str)
     response_schema = ResponseRefreshTokenSchema()
-    response_data = response_schema.dump(tokens_data)
-
-    response_payload = {
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Token refreshed successfully",
-        "data": response_data,
-    }
+        "data": tokens_data
+    })
 
     response = make_response(jsonify(response_payload))
     response.success = True
