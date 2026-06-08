@@ -1,10 +1,12 @@
-import jwt
 from datetime import datetime, timedelta
+from typing import Dict
 
+import jwt
 
 _jwtSecret = None
 _access_token_expire_minutes = 15
 _refresh_token_expire_days = 7
+
 
 class JwtHelper:
     @staticmethod
@@ -18,12 +20,14 @@ class JwtHelper:
         global _jwtSecret
 
         if not _jwtSecret:
-            raise Exception("JWT secret is not loaded. Please call load_jwt_secret() before creating tokens.")
+            raise Exception(
+                "JWT secret is not loaded. Please call load_jwt_secret() before creating tokens."
+            )
 
         payload = {
             "sub": str(user_id),
             "type": "access",
-            "exp": datetime.utcnow() + timedelta(minutes=_access_token_expire_minutes)
+            "exp": datetime.utcnow() + timedelta(minutes=_access_token_expire_minutes),
         }
         return jwt.encode(payload, _jwtSecret, algorithm="HS256")
 
@@ -32,23 +36,27 @@ class JwtHelper:
         global _jwtSecret
 
         if not _jwtSecret:
-            raise Exception("JWT secret is not loaded. Please call load_jwt_secret() before creating tokens.")
+            raise Exception(
+                "JWT secret is not loaded. Please call load_jwt_secret() before creating tokens."
+            )
 
         try:
             payload = {
                 "sub": str(user_id),
                 "type": "refresh",
-                "exp": datetime.utcnow() + timedelta(days=_refresh_token_expire_days)
+                "exp": datetime.utcnow() + timedelta(days=_refresh_token_expire_days),
             }
             return jwt.encode(payload, _jwtSecret, algorithm="HS256")
         except Exception as e:
             raise Exception(f"Could not create refresh token: {e}")
 
     @staticmethod
-    def verify_access_token(token: str) -> bool:
+    def __verify_access_token(token: str) -> bool:
         global _jwtSecret
         if not _jwtSecret:
-            raise Exception("JWT secret is not loaded. Please call load_jwt_secret() before creating tokens.")
+            raise Exception(
+                "JWT secret is not loaded. Please call load_jwt_secret() before creating tokens."
+            )
         try:
             payload = jwt.decode(token, _jwtSecret, algorithms=["HS256"])
             if payload["type"] == "access":
@@ -60,10 +68,12 @@ class JwtHelper:
         return False
 
     @staticmethod
-    def verify_refresh_token(token: str) -> bool:
+    def __verify_refresh_token(token: str) -> bool:
         global _jwtSecret
         if not _jwtSecret:
-            raise Exception("JWT secret is not loaded. Please call load_jwt_secret() before creating tokens.")
+            raise Exception(
+                "JWT secret is not loaded. Please call load_jwt_secret() before creating tokens."
+            )
         try:
             payload = jwt.decode(token, _jwtSecret, algorithms=["HS256"])
             if payload["type"] == "refresh":
@@ -73,6 +83,19 @@ class JwtHelper:
         except jwt.InvalidTokenError:
             pass
         return False
+
+    @staticmethod
+    def decode_access_token(access_token: str) -> Dict:
+        try:
+            if JwtHelper.__verify_access_token(token=access_token):
+                return jwt.decode(access_token, _jwtSecret, algorithms=["HS256"])
+
+            raise Exception("Invalid access token")
+        except jwt.ExpiredSignatureError:
+            raise Exception("Access token expired")
+        except jwt.InvalidTokenError:
+            raise Exception("Invalid access token")
+
 
 """
     LOGIN

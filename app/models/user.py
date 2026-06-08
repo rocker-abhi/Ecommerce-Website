@@ -1,10 +1,13 @@
 # importing libraries
 import uuid
-from enum import Enum as PyEnum
-from sqlalchemy import (Column, Integer, column, Uuid, String, Enum as SQLEnum, Boolean, DateTime, CheckConstraint)
-from .base import BaseModel
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
+from enum import Enum as PyEnum
+
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Integer, String, Uuid
+from sqlalchemy import Enum as SQLEnum
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from .base import BaseModel
 
 
 class UserEnum(PyEnum):
@@ -24,16 +27,18 @@ class UserModel(BaseModel):
     is_active = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow())
+    google_id = Column(String(255), unique=True, nullable=True)
 
-    __table_args__ = (
-        CheckConstraint('age >= 18 and age < 80', name='check_age'),
-    )
+    __table_args__ = (CheckConstraint("age >= 18 and age < 80", name="check_age"),)
 
     def hash_password(self, password):
         self.password = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+    def activate_user(self, status: bool):
+        self.is_active = status
 
     def __repr__(self):
         return f"<User {self.email}>"
