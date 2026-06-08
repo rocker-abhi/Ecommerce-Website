@@ -1,5 +1,3 @@
-from flask import jsonify
-
 from app.exceptions.auth import (
     InvalidCredentialsError,
     UserAlreadyExist,
@@ -46,4 +44,25 @@ class AuthService:
 
     def logout(self, user_id):
         self.user_repository.delete_refresh_token(user_id)
-        return {"success": True, "message": "Logged out successfully", "data": {}}
+
+    def refresh_token(self, refresh_token_str):
+        from app.exceptions.middleware_exceptions import InvalidTokenError
+
+        try:
+            payload = JwtHelper.decode_refresh_token(refresh_token_str)
+        except Exception:
+            raise InvalidTokenError()
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise InvalidTokenError()
+
+        db_token = self.user_repository.get_refresh_token_by_user_id(user_id)
+        if not db_token or db_token.token != refresh_token_str:
+            raise InvalidTokenError()
+
+        token = JwtHelper.create_access_token(user_id)
+        new_refresh_token = JwtHelper.create_refresh_token(user_id)
+        self.user_repository.updateRefreshToken(user_id, new_refresh_token)
+
+        return {"access_token": token, "refresh_token": new_refresh_token}

@@ -40,4 +40,8 @@ class RequestResponseCreateUserSchema(Schema):
 
 
 class ResponseCreateUserSchema(Schema):
-    pass
+    id = fields.UUID(required=True)
+    name = fields.Str(required=True)
+    age = fields.Int(required=True)
+    email = fields.Email(required=True)
+    userType = fields.Function(lambda obj: obj.userType.value if hasattr(obj.userType, 'value') else obj.userType)

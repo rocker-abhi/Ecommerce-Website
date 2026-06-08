@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import apiClient from '../services/api';
 
 interface RegisterProps {
   onSuccess: () => void;
@@ -38,7 +38,6 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
   };
 
   const isPasswordValid = (val: string) => {
-    // Backend length 6 to 12 for register
     return val.length >= 6 && val.length <= 12 && !val.includes(' ');
   };
 
@@ -101,8 +100,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
     setLoading(true);
 
     try {
-      // Axios POST request to /auth/register
-      const response = await axios.post('/auth/register', {
+      // API client POST request to /auth/register
+      const response = await apiClient.post('/auth/register', {
         name: name.trim(),
         age: parsedAge,
         email: email.trim(),
@@ -137,79 +136,55 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
     isPasswordValid(password);
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8 animate-fade-in relative z-10">
-      <div className="w-full max-w-lg bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-10 shadow-2xl shadow-black/80 transition-all duration-300">
-        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight text-center">Create Account</h2>
-        <p className="text-zinc-400 text-sm mb-8 text-center">Sign up to get started on our e-commerce platform</p>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8 bg-zinc-50 font-sans">
+      
+      {/* Amazon Logo */}
+      <div className="mb-6 flex flex-col items-center">
+        <svg className="w-28 h-10 text-zinc-900" viewBox="0 0 100 30" fill="currentColor">
+          <path d="M13.2 12c-1.3-.2-2.6-.3-3.9-.3-1.6 0-3.2.2-4.5.7C3.5 13 2.8 13.9 2.8 15c0 1.9 1.8 3 4.2 3 1.8 0 3.3-.6 4.4-1.6V12.1v-.1zm8.3 5.4c0 1.2.2 2.4.5 3.3.2.6.4 1 .7 1.2.2.2.5.3.8.3h.1c.3 0 .7-.2 1-.5.3-.3.6-.8.8-1.4l1.6.4c-.4 1.2-.9 2.1-1.6 2.8-.7.7-1.7 1-2.9 1-1.2 0-2.1-.4-2.8-1.2-.6-.8-.9-1.9-.9-3.3v-9.6H17.4v-1.9H19V8.6l2.5-.7v1.8h2.8v1.9H21.5v7.8zm11.7-8.1l.1 2.3c.7-.9 1.5-1.6 2.4-2 1-.5 2.1-.7 3.3-.7 1.8 0 3.2.5 4.2 1.5 1 1 1.5 2.5 1.5 4.5v6.5h-2.6v-6c0-1.2-.3-2.1-.8-2.6-.5-.5-1.3-.8-2.3-.8-1 0-1.8.3-2.5.9-.7.6-1.1 1.4-1.3 2.5v6h-2.6v-14h2.6v2zm24.6 2.1c-.9-.7-2.1-1-3.6-1-1.6 0-2.9.4-4 1.2-1.1.8-1.7 1.9-1.8 3.3h2.6c.1-.8.4-1.3.9-1.7.5-.4 1.2-.6 2.2-.6.9 0 1.6.2 2.1.5.5.3.7.8.7 1.4v.9c-1-.1-2.1-.2-3.3-.2-2.2 0-3.9.4-5 1.3-1.1.9-1.6 2.1-1.6 3.7 0 1.5.5 2.7 1.4 3.5 1 .8 2.3 1.2 3.9 1.2 1.6 0 2.9-.4 3.8-1.2.9-.8 1.4-1.7 1.6-2.7l.1 1h2.5V17c.2-2.1-.3-3.7-1.3-4.7-.9-1-2.5-1.5-4.7-1.5z" />
+          <path d="M72.2 9.3c-1.3 0-2.5.2-3.6.7-1.1.5-2 1.1-2.7 2-.7-.9-1.6-1.5-2.7-2-1.1-.5-2.3-.7-3.6-.7-2.2 0-3.9.7-5.1 2-1.2 1.3-1.8 3.2-1.8 5.6 0 2.4.6 4.3 1.8 5.6 1.2 1.3 2.9 2 5.1 2 1.3 0 2.5-.2 3.6-.7 1.1-.5 2-1.1 2.7-2 .7.9 1.6 1.5 2.7 2 1.1.5 2.3.7 3.6.7 2.2 0 3.9-.7 5.1-2 1.2-1.3 1.8-3.2 1.8-5.6 0-2.4-.6-4.3-1.8-5.6-1.2-1.3-2.9-2-5.1-2zm-12.7 8.3c0 1.5-.3 2.7-.9 3.4-.6.7-1.4 1.1-2.4 1.1-1 0-1.8-.4-2.4-1.1-.6-.7-.9-1.9-.9-3.4s.3-2.7.9-3.4c.6-.7 1.4-1.1 2.4-1.1 1 0 1.8.4 2.4 1.1.6.7.9 1.9.9 3.4zm12.7 0c0 1.5-.3 2.7-.9 3.4-.6.7-1.4 1.1-2.4 1.1-1 0-1.8-.4-2.4-1.1-.6-.7-.9-1.9-.9-3.4s.3-2.7.9-3.4c.6-.7 1.4-1.1 2.4-1.1 1 0 1.8.4 2.4 1.1.6.7.9 1.9.9 3.4zM86.8 9.3c-1.3 0-2.5.2-3.6.7-1.1.5-2 1.1-2.7 2v-2.4h-2.5v14.1h2.5v-7.8c0-1.2.3-2.1.8-2.6.5-.5 1.3-.8 2.3-.8 1 0 1.8.3 2.5.9.7.6 1.1 1.4 1.3 2.5v7.8h2.6v-8.9c0-1.8-.5-3.3-1.4-4.3-.9-1-2.3-1.5-4.2-1.5z" />
+          <path d="M12.8 24.1c11.2 4.4 26.2 6.7 41.2 6.7 12 0 24-1.5 34.6-4.6l.8 2c-11 3.2-23.4 4.8-35.4 4.8-15.4 0-30.8-2.3-42.3-6.9l.1-2z" fill="#f9a825" />
+          <path d="M91.3 22c-.5.3-.9.6-1.5.9-.6.3-1.3.5-2 .7h-.1l-.1-.2.4-.8.5-.8.5-.8c.2-.3.4-.6.6-1l.5.2c-.2.6-.4 1.2-.5 1.8h.3c.3-.1.6-.2.9-.3.3-.1.6-.2.8-.4h.1l.1.3z" fill="#f9a825" />
+        </svg>
+      </div>
 
-        {success && (
-          <div className="flex items-start gap-3 bg-green-950/40 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg text-sm mb-6 animate-fade-in">
-            <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{success}</span>
+      {/* Success Banner */}
+      {success && (
+        <div className="w-full max-w-[350px] mb-4 bg-white border border-emerald-600 rounded-md p-4 flex gap-3 shadow-sm animate-fade-in text-sm text-zinc-900">
+          <div className="text-emerald-600 font-bold text-lg leading-none">✓</div>
+          <div>
+            <h4 className="font-bold text-emerald-600 mb-0.5">Account Created</h4>
+            <p className="text-zinc-600 text-xs leading-normal">{success}</p>
           </div>
-        )}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-          {/* Account Type Role Cards (Replaces dropdown) */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-              Choose Account Type
-            </span>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Buyer Card */}
-              <div
-                onClick={() => !loading && setUserType('buyer')}
-                className={`flex flex-col items-center p-4 rounded-xl border cursor-pointer select-none transition-all duration-200 text-center ${
-                  userType === 'buyer'
-                    ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-950/25'
-                    : 'border-white/10 bg-black/20 hover:border-white/20'
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-2.5 ${
-                  userType === 'buyer' ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-zinc-400'
-                }`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-bold text-white mb-0.5">Buyer</span>
-                <span className="text-[11px] text-zinc-400 leading-tight">Order products & review items</span>
-              </div>
-
-              {/* Seller Card */}
-              <div
-                onClick={() => !loading && setUserType('seller')}
-                className={`flex flex-col items-center p-4 rounded-xl border cursor-pointer select-none transition-all duration-200 text-center ${
-                  userType === 'seller'
-                    ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-950/25'
-                    : 'border-white/10 bg-black/20 hover:border-white/20'
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-2.5 ${
-                  userType === 'seller' ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-zinc-400'
-                }`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V21M3 6h18" />
-                  </svg>
-                </div>
-                <span className="text-sm font-bold text-white mb-0.5">Seller</span>
-                <span className="text-[11px] text-zinc-400 leading-tight">Sell items & view analytics</span>
-              </div>
-            </div>
+      {/* Error Alert Box */}
+      {showErrorModal && (
+        <div className="w-full max-w-[350px] mb-4 bg-white border border-red-700 rounded-md p-4 flex gap-3 shadow-sm animate-fade-in text-sm text-zinc-900">
+          <div className="text-red-700 font-bold text-lg leading-none">!</div>
+          <div>
+            <h4 className="font-bold text-red-700 mb-0.5">There was a problem</h4>
+            <p className="text-zinc-700 text-xs leading-normal">{errorMessage}</p>
           </div>
+        </div>
+      )}
 
-          <div className="flex flex-col gap-1.5 mt-1">
-            <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider" htmlFor="name">
-              Full Name
+      {/* White Create Account Card */}
+      <div className="w-full max-w-[350px] bg-white border border-zinc-200 rounded-lg p-6 shadow-xs">
+        <h2 className="text-2xl font-normal text-zinc-900 mb-4">Create account</h2>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4.5" noValidate>
+          {/* Name field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-zinc-900" htmlFor="name">
+              Your name
             </label>
             <input
               id="name"
               type="text"
-              className="w-full bg-black/35 border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none rounded-lg px-4 py-2.5 text-white text-sm transition-all duration-200 placeholder-zinc-600"
-              placeholder="John Doe"
+              placeholder="First and last name"
+              className="w-full bg-white border border-zinc-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none rounded-md px-3 py-1.5 text-zinc-900 text-sm transition-all placeholder-zinc-400"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setNameTouched(true)}
@@ -217,43 +192,39 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
               required
             />
             {getNameError() && (
-              <span className="text-red-400 text-xs mt-1 font-medium">{getNameError()}</span>
+              <span className="text-red-700 text-[11px] mt-0.5">{getNameError()}</span>
             )}
           </div>
 
-          <div className="flex gap-4">
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider" htmlFor="age">
-                Age
-              </label>
-              <input
-                id="age"
-                type="number"
-                className="w-full bg-black/35 border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none rounded-lg px-4 py-2.5 text-white text-sm transition-all duration-200 placeholder-zinc-600"
-                placeholder="25"
-                min="18"
-                max="80"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                onBlur={() => setAgeTouched(true)}
-                disabled={loading}
-                required
-              />
-              {getAgeError() && (
-                <span className="text-red-400 text-xs mt-1 font-medium">{getAgeError()}</span>
-              )}
-            </div>
+          {/* Age field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-zinc-900" htmlFor="age">
+              Age
+            </label>
+            <input
+              id="age"
+              type="number"
+              className="w-full bg-white border border-zinc-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none rounded-md px-3 py-1.5 text-zinc-900 text-sm transition-all placeholder-zinc-400"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              onBlur={() => setAgeTouched(true)}
+              disabled={loading}
+              required
+            />
+            {getAgeError() && (
+              <span className="text-red-700 text-[11px] mt-0.5">{getAgeError()}</span>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider" htmlFor="email">
-              Email Address
+          {/* Email field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-zinc-900" htmlFor="email">
+              Email
             </label>
             <input
               id="email"
               type="email"
-              className="w-full bg-black/35 border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none rounded-lg px-4 py-2.5 text-white text-sm transition-all duration-200 placeholder-zinc-600"
-              placeholder="john@example.com"
+              className="w-full bg-white border border-zinc-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none rounded-md px-3 py-1.5 text-zinc-900 text-sm transition-all placeholder-zinc-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setEmailTouched(true)}
@@ -262,19 +233,20 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
               required
             />
             {getEmailError() && (
-              <span className="text-red-400 text-xs mt-1 font-medium">{getEmailError()}</span>
+              <span className="text-red-700 text-[11px] mt-0.5">{getEmailError()}</span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider" htmlFor="password">
+          {/* Password field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-zinc-900" htmlFor="password">
               Password
             </label>
             <input
               id="password"
               type="password"
-              className="w-full bg-black/35 border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none rounded-lg px-4 py-2.5 text-white text-sm transition-all duration-200 placeholder-zinc-600"
-              placeholder="••••••••"
+              placeholder="At least 6 characters"
+              className="w-full bg-white border border-zinc-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none rounded-md px-3 py-1.5 text-zinc-900 text-sm transition-all placeholder-zinc-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setPasswordTouched(true)}
@@ -282,66 +254,71 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
               autoComplete="new-password"
               required
             />
+            <span className="text-[10px] text-zinc-500 mt-0.5 font-normal">
+              Passwords must be between 6 and 12 characters.
+            </span>
             {getPasswordError() && (
-              <span className="text-red-400 text-xs mt-1 font-medium">{getPasswordError()}</span>
+              <span className="text-red-700 text-[11px] mt-0.5">{getPasswordError()}</span>
             )}
           </div>
 
+          {/* Account Type Selection (Sleek Radio Inputs to fit the clean layout) */}
+          <div className="flex flex-col gap-1.5 mt-1">
+            <span className="text-xs font-bold text-zinc-900">
+              Account Type
+            </span>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 text-xs text-zinc-800 cursor-pointer select-none">
+                <input
+                  type="radio"
+                  name="userType"
+                  value="buyer"
+                  checked={userType === 'buyer'}
+                  onChange={() => setUserType('buyer')}
+                  className="accent-amber-500 cursor-pointer"
+                  disabled={loading}
+                />
+                Buyer (Order items)
+              </label>
+              
+              <label className="flex items-center gap-1.5 text-xs text-zinc-800 cursor-pointer select-none">
+                <input
+                  type="radio"
+                  name="userType"
+                  value="seller"
+                  checked={userType === 'seller'}
+                  onChange={() => setUserType('seller')}
+                  className="accent-amber-500 cursor-pointer"
+                  disabled={loading}
+                />
+                Seller (Sell items)
+              </label>
+            </div>
+          </div>
+
+          {/* Create Account button */}
           <button
             type="submit"
-            className="w-full bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-60 disabled:pointer-events-none text-white text-sm font-semibold py-3.5 px-4 rounded-lg shadow-lg shadow-purple-950/40 hover:shadow-purple-900/50 transition-all duration-200 flex items-center justify-center gap-2 mt-2"
+            className="w-full amazon-btn-primary py-1.5 px-4 text-xs font-normal shadow-xs mt-3.5"
             disabled={loading || (nameTouched && ageTouched && emailTouched && passwordTouched && !isFormValid)}
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              'Create Account'
-            )}
+            {loading ? 'Creating...' : 'Create your Amazon account'}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-white/5 text-center text-sm text-zinc-400">
-          Already have an account?
+        <div className="mt-5 pt-4 border-t border-zinc-200 text-xs text-zinc-900 leading-normal">
+          Already have an account?{' '}
           <button
             type="button"
-            className="text-purple-400 hover:text-purple-300 font-semibold ml-1.5 hover:underline focus:outline-none"
+            className="text-cyan-800 hover:text-orange-700 hover:underline font-normal cursor-pointer"
             onClick={() => onToggleView('login')}
             disabled={loading}
           >
-            Log in
+            Sign in
           </button>
         </div>
       </div>
 
-      {/* Premium White Popup Error Modal */}
-      {showErrorModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-xs z-50 animate-fade-in p-4">
-          <div className="w-full max-w-sm bg-white/95 backdrop-blur-md border border-white/30 rounded-2xl p-6 shadow-2xl text-zinc-900 animate-fade-in flex flex-col items-center">
-            {/* Warning Icon */}
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-4 shadow-sm">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            
-            <h3 className="text-xl font-bold text-zinc-950 mb-2">Registration Error</h3>
-            <p className="text-sm text-zinc-600 text-center mb-6 leading-relaxed">
-              {errorMessage}
-            </p>
-
-            <button
-              type="button"
-              className="w-full bg-zinc-900 hover:bg-zinc-850 active:bg-zinc-950 text-white font-semibold text-sm py-3 px-4 rounded-xl shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-zinc-500/50"
-              onClick={() => {
-                setShowErrorModal(false);
-                setErrorMessage('');
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

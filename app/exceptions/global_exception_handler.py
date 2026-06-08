@@ -17,11 +17,13 @@ def register_exception_handlers(app):
         response = {
             "success": False,
             "message": error.message,
-            "error_code": error.error_code
+            "data": {
+                "error_code": error.error_code
+            }
         }
 
         if error.details:
-            response["details"] = error.details
+            response["data"]["details"] = error.details
 
         return jsonify(response), error.status_code
 
@@ -36,7 +38,9 @@ def register_exception_handlers(app):
         return jsonify({
             "success": False,
             "message": "Internal Server Error",
-            "error_code": "INTERNAL_SERVER_ERROR"
+            "data": {
+                "error_code": "INTERNAL_SERVER_ERROR"
+            }
         }), 500
 
     @app.errorhandler(ValidationError)
@@ -48,6 +52,8 @@ def register_exception_handlers(app):
         return jsonify({
             "success": False,
             "message": "Validation failed",
-            "error_code": "VALIDATION_ERROR",
-            "errors": error.messages
+            "data": {
+                "error_code": "VALIDATION_ERROR",
+                "errors": error.messages
+            }
         }), 400

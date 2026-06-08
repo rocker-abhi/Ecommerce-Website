@@ -31,3 +31,15 @@ class UserRepository:
     def delete_refresh_token(self, user_id):
         g.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
         g.db.commit()
+
+    def get_refresh_token_by_user_id(self, user_id):
+        return g.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+
+    def upgdate_refresh_token(self, user_id, refresh_token):
+        current_token = (
+            g.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+        )
+        current_token.token = refresh_token
+        g.db.commit()
+        g.db.refresh(current_token)
+        return current_token

@@ -96,6 +96,18 @@ class JwtHelper:
         except jwt.InvalidTokenError:
             raise Exception("Invalid access token")
 
+    @staticmethod
+    def decode_refresh_token(refresh_token: str) -> Dict:
+        try:
+            if JwtHelper.__verify_refresh_token(token=refresh_token):
+                return jwt.decode(refresh_token, _jwtSecret, algorithms=["HS256"])
+
+            raise Exception("Invalid refresh token")
+        except jwt.ExpiredSignatureError:
+            raise Exception("Refresh token expired")
+        except jwt.InvalidTokenError:
+            raise Exception("Invalid refresh token")
+
 
 """
     LOGIN
