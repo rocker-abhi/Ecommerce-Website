@@ -16,7 +16,7 @@ import re
 import dotenv
 from pathlib import Path
 from app.utils.database import DatabaseHelper
-from app.models.user import UserModel, UserEnum
+from app.models.user import UserModel
 
 # Fix encoding for Windows
 if sys.stdout.encoding != 'utf-8':
@@ -78,14 +78,21 @@ def create_superuser(email, password):
         admin_user = UserModel(
             name=email.split('@')[0],  # Use email prefix as name
             email=email,
-            password=password,  # Will be hashed by hash_password method
-            userType=UserEnum.admin,
             is_active=True,
+            is_admin=True,
             age=25  # Default age for admin user
         )
 
-        # Hash the password
-        admin_user.hash_password(password)
+        # Hash/set the password
+        admin_user.set_password(password)
+
+        # Link to the admin group in the database
+        from app.models.group import GroupModel
+        admin_group = session.query(GroupModel).filter_by(name="admin").first()
+        if admin_group:
+            admin_user.groups.append(admin_group)
+        else:
+            print("Warning: 'admin' group not found in database. User created without group link.")
 
         # Add to session and commit
         session.add(admin_user)
@@ -132,6 +139,9 @@ def main():
     if not email or not password:
         print("Error: Email and password cannot be empty")
         sys.exit(1)
+
+    if email == "admin":
+        email = "admin@example.com"
 
     if not validate_email(email):
         print("Error: Invalid email format")
