@@ -67,5 +67,46 @@ class UserModel(BaseModel):
         "AddressModel", back_populates="user", cascade="all, delete-orphan"
     )
 
+    refresh_tokens: Mapped[List["RefreshToken"]] = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    groups: Mapped[List["GroupModel"]] = relationship(
+        "GroupModel", secondary="user_groups", back_populates="users"
+    )
+
+    cart: Mapped["CartModel"] = relationship(
+        "CartModel", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+
+    orders: Mapped[List["OrderModel"]] = relationship(
+        "OrderModel", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    reviews: Mapped[List["ReviewModel"]] = relationship(
+        "ReviewModel", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    wishlist: Mapped["WishlistModel"] = relationship(
+        "WishlistModel", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+
+    @property
+    def userType(self) -> str:
+        if any(group.name == "admin" for group in self.groups):
+            return "admin"
+        if any(group.name == "seller" for group in self.groups):
+            return "seller"
+        return "buyer"
+
+    @property
+    def address(self):
+        active_addresses = [addr for addr in self.addresses if addr.is_active]
+        if active_addresses:
+            return active_addresses[0]
+        if self.addresses:
+            return self.addresses[0]
+        return {"city": None, "state": None, "country": None}
+
     def __repr__(self):
         return f"<User {self.email}>"

@@ -1,9 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
-
-from sqlalchemy import Column, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, DateTime, ForeignKey, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
 
@@ -11,30 +9,24 @@ from app.models.base import BaseModel
 class RefreshToken(BaseModel):
     __tablename__ = "refresh_tokens"
 
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id"),
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
 
-    token = Column(
+    token: Mapped[str] = mapped_column(
         String(500),
         nullable=False
     )
 
-    expires_at = Column(
+    expires_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=lambda: datetime.utcnow() + timedelta(days=7)
     )
 
-    user = relationship(
+    user: Mapped["UserModel"] = relationship(
         "UserModel",
-        foreign_keys=[user_id]
+        back_populates="refresh_tokens"
     )

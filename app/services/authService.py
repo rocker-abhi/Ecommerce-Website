@@ -36,18 +36,52 @@ class AuthService:
         if user:
             raise UserAlreadyExist()
 
-        address_data = address_data or {}
+        from app.models.addresses import AddressModel
+        from app.models.user import UserModel
+
+        addresses = []
+        if address_data and any(address_data.values()):
+            address = AddressModel(
+                address_line_1=address_data.get("address_line_1") or "Not Specified",
+                address_line_2=address_data.get("address_line_2"),
+                city=address_data.get("city") or "Not Specified",
+                state=address_data.get("state") or "Not Specified",
+                zip_code=address_data.get("zip_code") or "000000",
+                country=address_data.get("country") or "Not Specified",
+                is_active=True
+            )
+            addresses.append(address)
+
+        # Map frontend userType role names to database group names
+        # 'buyer' -> 'customer'
+        # 'seller' -> 'seller'
+        # 'admin' -> 'admin'
+        group_name = "customer"
+        if user_type:
+            user_type_lower = user_type.lower()
+            if user_type_lower == "buyer":
+                group_name = "customer"
+            elif user_type_lower in ["admin", "seller"]:
+                group_name = user_type_lower
+            else:
+                group_name = user_type_lower
+
+        group = self.user_repository.get_group_by_name(group_name)
+        is_admin_flag = (group_name == "admin")
+
         new_user = UserModel(
             name=name,
             age=age,
             email=email,
-            userType=user_type,
-            city=address_data.get("city"),
-            state=address_data.get("state"),
-            country=address_data.get("country"),
+            is_active=True,
+            is_admin=is_admin_flag,
+            addresses=addresses
         )
-        new_user.hash_password(password)
-        new_user.activate_user(status=True)
+        new_user.set_password(password)
+
+        if group:
+            new_user.groups.append(group)
+
         user = self.user_repository.create_user(new_user)
         return user
 

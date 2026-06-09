@@ -43,3 +43,7 @@ class UserRepository:
         g.db.commit()
         g.db.refresh(current_token)
         return current_token
+
+    def get_group_by_name(self, name):
+        from app.models.group import GroupModel
+        return g.db.query(GroupModel).filter(GroupModel.name == name).first()

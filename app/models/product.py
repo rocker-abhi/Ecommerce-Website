@@ -1,0 +1,50 @@
+import uuid
+from decimal import Decimal
+from typing import List
+from sqlalchemy import ForeignKey, String, Numeric, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import BaseModel
+
+
+class ProductModel(BaseModel):
+    __tablename__ = "products"
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=True)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("categories.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    # Relationships
+    category: Mapped["CategoryModel"] = relationship(
+        "CategoryModel", back_populates="products"
+    )
+
+    images: Mapped[List["ProductImageModel"]] = relationship(
+        "ProductImageModel", back_populates="product", cascade="all, delete-orphan"
+    )
+
+    inventory: Mapped["InventoryModel"] = relationship(
+        "InventoryModel", back_populates="product", uselist=False, cascade="all, delete-orphan"
+    )
+
+    cart_items: Mapped[List["CartItemModel"]] = relationship(
+        "CartItemModel", back_populates="product", cascade="all, delete-orphan"
+    )
+
+    order_items: Mapped[List["OrderItemModel"]] = relationship(
+        "OrderItemModel", back_populates="product", cascade="all, delete-orphan"
+    )
+
+    reviews: Mapped[List["ReviewModel"]] = relationship(
+        "ReviewModel", back_populates="product", cascade="all, delete-orphan"
+    )
+
+    wishlist_items: Mapped[List["WishlistItemModel"]] = relationship(
+        "WishlistItemModel", back_populates="product", cascade="all, delete-orphan"
+    )
