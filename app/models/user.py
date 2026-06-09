@@ -36,11 +36,7 @@ class UserModel(BaseModel):
 
     @property
     def address(self):
-        return {
-            "city": self.city,
-            "state": self.state,
-            "country": self.country
-        }
+        return {"city": self.city, "state": self.state, "country": self.country}
 
     def hash_password(self, password):
         self.password = generate_password_hash(password)
