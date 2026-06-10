@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import apiClient from '../services/api';
 
 interface Product {
   id: number;
@@ -59,6 +60,7 @@ const generateMockProducts = (): Product[] => {
 const MOCK_PRODUCTS = generateMockProducts();
 
 export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc' | 'rating'>('default');
@@ -70,9 +72,95 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  // Active dashboard view tab state
+  const [activeTab, setActiveTab] = useState<'buyer' | 'seller' | 'admin'>('buyer');
+
+  // Admin dashboard metrics state
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Seller new product form states
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState<Product['category']>('Electronics');
+  const [newProdStock, setNewProdStock] = useState('25');
+  const [newProdSKU, setNewProdSKU] = useState('');
+  const [newProdImage, setNewProdImage] = useState('');
+  const [newProdDesc, setNewProdDesc] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  // Check if user is admin from JWT token
+  const isAdmin = useMemo(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return false;
+      const payload = JSON.parse(window.atob(payloadBase64));
+      return !!payload.is_super_user || (payload.user_permissions || []).includes('dashboard:view');
+    } catch (e) {
+      console.error('Failed to parse token payload:', e);
+      return false;
+    }
+  }, []);
+
+  // Check if user is seller from JWT token
+  const isSeller = useMemo(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return false;
+      const payload = JSON.parse(window.atob(payloadBase64));
+      // Sellers have product:create permission or is admin
+      return (payload.user_permissions || []).includes('product:create') || !!payload.is_super_user;
+    } catch (e) {
+      console.error('Failed to parse token payload:', e);
+      return false;
+    }
+  }, []);
+
+  // Set default view on load
+  useEffect(() => {
+    if (isAdmin) {
+      setActiveTab('admin');
+    } else if (isSeller) {
+      setActiveTab('seller');
+    } else {
+      setActiveTab('buyer');
+    }
+  }, [isAdmin, isSeller]);
+
+  const fetchMetrics = async () => {
+    setLoadingMetrics(true);
+    setMetricsError(null);
+    try {
+      const response = await apiClient.get('/dashboard/');
+      if (response.data && response.data.success) {
+        setMetrics(response.data.data);
+      } else {
+        setMetricsError(response.data?.message || 'Failed to load metrics');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'An error occurred while fetching metrics';
+      setMetricsError(msg);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'admin' && isAdmin) {
+      fetchMetrics();
+    }
+  }, [activeTab, isAdmin]);
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    let result = [...MOCK_PRODUCTS];
+    let result = [...products];
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
@@ -94,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
     }
 
     return result;
-  }, [searchTerm, selectedCategory, sortBy]);
+  }, [products, searchTerm, selectedCategory, sortBy]);
 
   // Cart operations
   const addToCart = (product: Product) => {
@@ -137,6 +225,670 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
       dollars: parts[0],
       cents: parts[1]
     };
+  };
+
+  const renderAdminDashboard = () => {
+    if (!isAdmin) {
+      return (
+        <div className="max-w-md mx-auto my-16 p-8 bg-white border border-zinc-200 rounded-lg shadow-sm text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-100">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-zinc-900">Admin Access Denied</h3>
+          <p className="text-zinc-600 text-sm mt-2 leading-relaxed">
+            Your account does not have permission to access the administration panel. Please contact your system administrator or log in with an admin account.
+          </p>
+          <div className="bg-zinc-50 border border-zinc-200 rounded-md p-3.5 mt-5 text-[11px] font-mono text-zinc-500 text-left">
+            <div className="flex justify-between border-b border-zinc-200 pb-1.5 mb-1.5">
+              <span>Required Permission:</span>
+              <span className="font-bold text-red-700">dashboard:view</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Your Account:</span>
+              <span className="truncate max-w-[180px]">{userEmail}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('buyer')}
+            className="w-full mt-6 amazon-btn-primary py-2 px-4 text-xs font-semibold"
+          >
+            Return to Buyer Dashboard
+          </button>
+        </div>
+      );
+    }
+
+    if (loadingMetrics && !metrics) {
+      return (
+        <div className="flex flex-col items-center justify-center py-32">
+          <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-zinc-500 text-xs font-semibold mt-4">Connecting to dashboard services...</span>
+        </div>
+      );
+    }
+
+    if (metricsError) {
+      return (
+        <div className="max-w-lg mx-auto my-16 p-8 bg-white border border-red-200 rounded-lg shadow-sm text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-zinc-950">Failed to Load Admin Metrics</h3>
+          <p className="text-zinc-600 text-xs mt-1 leading-normal">{metricsError}</p>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => setActiveTab('buyer')}
+              className="flex-1 amazon-btn-secondary py-2 text-xs font-semibold"
+            >
+              Back to Store
+            </button>
+            <button
+              onClick={fetchMetrics}
+              className="flex-1 amazon-btn-primary py-2 text-xs font-semibold"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Default metrics data mapping if empty
+    const {
+      total_products = 0,
+      total_users = 0,
+      total_orders = 0,
+      total_revenue = 0,
+      recent_orders = [],
+      low_stock_products = []
+    } = metrics || {};
+
+    return (
+      <div className="max-w-[1500px] mx-auto px-4 mt-6 animate-fade-in text-left">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-zinc-950 tracking-tight">Admin Console Dashboard</h2>
+            <p className="text-xs text-zinc-500 mt-1">Real-time statistics, recent sales orders, and inventory monitoring.</p>
+          </div>
+          <button
+            onClick={fetchMetrics}
+            disabled={loadingMetrics}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 rounded shadow-2xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className={`w-3.5 h-3.5 ${loadingMetrics ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.213 6H16" />
+            </svg>
+            Refresh Data
+          </button>
+        </div>
+
+        {/* Analytics Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-6">
+          {/* Card 1: Revenue */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Total Revenue</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">${total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="p-2 bg-emerald-50 rounded-sm text-emerald-600 border border-emerald-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-emerald-600 font-semibold mt-2.5 flex items-center gap-1">
+              <span>★ High volume sales</span>
+            </div>
+          </div>
+
+          {/* Card 2: Orders */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Total Orders</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_orders}</span>
+              </div>
+              <div className="p-2 bg-amber-50 rounded-sm text-amber-600 border border-amber-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
+              Customer purchase orders
+            </div>
+          </div>
+
+          {/* Card 3: Products */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Active Products</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_products}</span>
+              </div>
+              <div className="p-2 bg-sky-50 rounded-sm text-sky-600 border border-sky-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
+              Available catalog listings
+            </div>
+          </div>
+
+          {/* Card 4: Users */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-violet-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Registered Users</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_users}</span>
+              </div>
+              <div className="p-2 bg-violet-50 rounded-sm text-violet-600 border border-violet-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
+              Active buyers and sellers
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Dual Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Recent Orders Panel */}
+          <div className="bg-white border border-zinc-200 rounded-sm shadow-2xs lg:col-span-3 flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50 flex justify-between items-center">
+              <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                <svg className="w-4.5 h-4.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Recent Sales Orders
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-200 text-zinc-700 rounded-full">Latest 5</span>
+            </div>
+
+            <div className="flex-1 overflow-x-auto">
+              {recent_orders.length === 0 ? (
+                <div className="text-center py-16 text-zinc-400 text-xs">
+                  No orders have been recorded in the database.
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-50 text-zinc-500 font-bold border-b border-zinc-200">
+                      <th className="px-5 py-3">Order Email / ID</th>
+                      <th className="px-4 py-3">Created Date</th>
+                      <th className="px-4 py-3">Amount</th>
+                      <th className="px-5 py-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent_orders.map((order: any) => {
+                      let statusClass = 'bg-zinc-100 text-zinc-800';
+                      const statusVal = (order.status || '').toLowerCase();
+                      if (statusVal.includes('completed') || statusVal.includes('paid') || statusVal.includes('delivered') || statusVal === 'active') {
+                        statusClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                      } else if (statusVal.includes('pending') || statusVal.includes('processing')) {
+                        statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
+                      } else if (statusVal.includes('cancel') || statusVal.includes('fail') || statusVal.includes('refund')) {
+                        statusClass = 'bg-red-50 text-red-800 border-red-200';
+                      }
+
+                      return (
+                        <tr key={order.id} className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors">
+                          <td className="px-5 py-3.5">
+                            <div className="font-bold text-zinc-900 truncate max-w-[200px]">{order.user_email}</div>
+                            <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{order.id}</div>
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-600 whitespace-nowrap">
+                            {order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-zinc-900 whitespace-nowrap">
+                            ${order.total_amount.toFixed(2)}
+                          </td>
+                          <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold border ${statusClass}`}>
+                              {order.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Low Stock Alerts Panel */}
+          <div className="bg-white border border-zinc-200 rounded-sm shadow-2xs lg:col-span-2 flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50 flex justify-between items-center">
+              <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+                <svg className="w-4.5 h-4.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Low Stock Alerts
+              </h3>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full">Critically Low</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-[360px]">
+              {low_stock_products.length === 0 ? (
+                <div className="text-center py-16 text-zinc-400 text-xs">
+                  All inventory levels are healthy.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-100">
+                  {low_stock_products.map((product: any) => (
+                    <div key={product.id} className="p-4 flex justify-between items-center hover:bg-zinc-50/50 transition-colors">
+                      <div className="min-w-0 pr-3">
+                        <h4 className="font-bold text-xs text-zinc-900 truncate">{product.name}</h4>
+                        <div className="flex items-center gap-2 mt-1 text-[10px]">
+                          <span className="font-mono text-zinc-400">SKU: {product.sku}</span>
+                          <span className="text-zinc-300">|</span>
+                          <span className="font-bold text-[#b12704]">${product.price.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right shrink-0">
+                        <span className="inline-block px-2 py-1 rounded bg-red-50 text-red-700 font-bold border border-red-100 text-[10px] min-w-[50px] text-center">
+                          {product.quantity} left
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSellerDashboard = () => {
+    if (!isSeller) {
+      return (
+        <div className="max-w-md mx-auto my-16 p-8 bg-white border border-zinc-200 rounded-lg shadow-sm text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-100">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-zinc-900">Seller Access Denied</h3>
+          <p className="text-zinc-600 text-sm mt-2 leading-relaxed">
+            Your account does not have permission to access the seller portal.
+          </p>
+          <button
+            onClick={() => setActiveTab('buyer')}
+            className="w-full mt-6 amazon-btn-primary py-2 px-4 text-xs font-semibold"
+          >
+            Return to Store
+          </button>
+        </div>
+      );
+    }
+
+    const handleAddProductSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      setFormError(null);
+      setFormSuccess(null);
+
+      if (!newProdName.trim() || !newProdPrice || !newProdStock || !newProdSKU.trim() || !newProdDesc.trim()) {
+        setFormError('All fields marked with * are required.');
+        return;
+      }
+
+      const parsedPrice = parseFloat(newProdPrice);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        setFormError('Please enter a valid positive price.');
+        return;
+      }
+
+      const parsedStock = parseInt(newProdStock, 10);
+      if (isNaN(parsedStock) || parsedStock < 0) {
+        setFormError('Please enter a valid stock quantity.');
+        return;
+      }
+
+      // Create new product
+      const newId = products.length + 1;
+      const imageUrl = newProdImage.trim() || `https://picsum.photos/id/${110 + newId}/400/300`;
+      
+      const newProduct: Product = {
+        id: newId,
+        name: newProdName.trim(),
+        price: parsedPrice,
+        category: newProdCategory,
+        rating: 5.0,
+        image: imageUrl,
+        description: newProdDesc.trim()
+      };
+
+      setProducts(prev => [newProduct, ...prev]);
+      setFormSuccess('Product listed successfully in catalog!');
+      
+      // Clear form
+      setNewProdName('');
+      setNewProdPrice('');
+      setNewProdStock('25');
+      setNewProdSKU('');
+      setNewProdImage('');
+      setNewProdDesc('');
+
+      setTimeout(() => {
+        setFormSuccess(null);
+        setShowAddForm(false);
+      }, 1500);
+    };
+
+    return (
+      <div className="max-w-[1500px] mx-auto px-4 mt-6 animate-fade-in text-left">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-zinc-950 tracking-tight">Amazon Seller Central</h2>
+            <p className="text-xs text-zinc-500 mt-1">Manage listings, analyze sales, and add new items to the storefront catalog.</p>
+          </div>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-[#febd69] hover:bg-[#f3a847] text-zinc-900 rounded shadow-sm border border-zinc-400/50 transition-all cursor-pointer active:scale-98"
+          >
+            {showAddForm ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                List New Product
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Add Product Form Collapse */}
+        {showAddForm && (
+          <div className="bg-white border border-zinc-200 rounded-sm p-6 mb-6 shadow-xs animate-fade-in max-w-2xl">
+            <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider mb-4 border-b border-zinc-200 pb-2">
+              List a New Catalog Product
+            </h3>
+            
+            {formError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded text-xs mb-4">
+                {formError}
+              </div>
+            )}
+
+            {formSuccess && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2.5 rounded text-xs mb-4">
+                {formSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleAddProductSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ergonomic Bluetooth Mouse"
+                  value={newProdName}
+                  onChange={(e) => setNewProdName(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Category *</label>
+                <select
+                  value={newProdCategory}
+                  onChange={(e: any) => setNewProdCategory(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white cursor-pointer"
+                >
+                  <option value="Electronics">Electronics</option>
+                  <option value="Apparel">Apparel</option>
+                  <option value="Home">Home</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Accessories">Accessories</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">SKU / Code *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. EL-MOU-990"
+                  value={newProdSKU}
+                  onChange={(e) => setNewProdSKU(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Price ($) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="e.g. 29.99"
+                  value={newProdPrice}
+                  onChange={(e) => setNewProdPrice(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Inventory / Stock *</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 50"
+                  value={newProdStock}
+                  onChange={(e) => setNewProdStock(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Image URL (Optional)</label>
+                <input
+                  type="url"
+                  placeholder="e.g. https://images.unsplash.com/... (leave blank for random picsum)"
+                  value={newProdImage}
+                  onChange={(e) => setNewProdImage(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Description *</label>
+                <textarea
+                  rows={3}
+                  placeholder="Detail the key features, warranty details, and specifications..."
+                  value={newProdDesc}
+                  onChange={(e) => setNewProdDesc(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white resize-none"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="sm:col-span-2 bg-[#febd69] hover:bg-[#f3a847] text-zinc-900 font-bold py-2.5 text-xs rounded shadow-xs mt-2 border border-zinc-400/50 cursor-pointer active:scale-[0.99] transition-all"
+              >
+                Submit Listing to Storefront
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Analytics Statistics Panel */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-6">
+          {/* Total Store Revenue */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Store Sales Revenue</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">$2,840.50</span>
+              </div>
+              <div className="p-2 bg-amber-50 rounded-sm text-amber-600 border border-amber-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-zinc-500 mt-2">
+              From user catalog purchases
+            </div>
+          </div>
+
+          {/* Active Listings */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Your Active Listings</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{products.filter(p => p.id > 50 || p.id % 7 === 0).length}</span>
+              </div>
+              <div className="p-2 bg-sky-50 rounded-sm text-sky-600 border border-sky-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-zinc-500 mt-2">
+              Visible on global storefront
+            </div>
+          </div>
+
+          {/* Store Pageviews */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Store Catalog Pageviews</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">1,245</span>
+              </div>
+              <div className="p-2 bg-emerald-50 rounded-sm text-emerald-600 border border-emerald-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
+              <span>↑ 12% increase this week</span>
+            </div>
+          </div>
+
+          {/* Pending Shipments */}
+          <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-red-500"></div>
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Fulfillments Pending</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">2</span>
+              </div>
+              <div className="p-2 bg-red-50 rounded-sm text-red-600 border border-red-100">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-[10px] text-red-600 font-bold mt-2">
+              Requires shipping labeling
+            </div>
+          </div>
+        </div>
+
+        {/* Listings Inventory Table */}
+        <div className="bg-white border border-zinc-200 rounded-sm shadow-2xs flex flex-col overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+            <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
+              <svg className="w-4.5 h-4.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Your Active Inventory Catalog
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-zinc-50 text-zinc-500 font-bold border-b border-zinc-200">
+                  <th className="px-5 py-3">Product Name</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Price</th>
+                  <th className="px-4 py-3">Stock Level</th>
+                  <th className="px-5 py-3">SKU</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.filter(p => p.id > 50 || p.id % 7 === 0).map((product) => {
+                  const sku = product.id > 50 ? `SKU-EL-${product.id * 13 + 104}` : `SKU-MOCK-${product.id}`;
+                  const stock = product.id > 50 ? 25 : (product.id * 3) % 45;
+                  
+                  let stockBadge = 'text-green-700 font-bold bg-green-50 border border-green-100';
+                  let stockText = `In Stock (${stock})`;
+
+                  if (stock === 0) {
+                    stockBadge = 'text-red-700 font-bold bg-red-50 border border-red-100';
+                    stockText = 'Out of Stock';
+                  } else if (stock < 10) {
+                    stockBadge = 'text-amber-700 font-bold bg-amber-50 border border-amber-100';
+                    stockText = `Low Stock (${stock})`;
+                  }
+
+                  return (
+                    <tr key={product.id} className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-5 py-3 flex items-center gap-3">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-10 h-10 object-contain bg-zinc-50 border border-zinc-200 p-0.5 rounded-sm"
+                        />
+                        <span className="font-bold text-zinc-900 truncate max-w-[280px]">
+                          {product.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-zinc-600 font-medium">{product.category}</td>
+                      <td className="px-4 py-3 font-bold text-[#b12704]">${product.price.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase ${stockBadge}`}>
+                          {stockText}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 font-mono text-zinc-400">{sku}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -254,7 +1006,79 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
         
       </header>
 
-      {/* Hero Banner Promo Section */}
+      {/* Sub-Navigation Header Bar */}
+      {(isAdmin || isSeller) && (
+        <div className="bg-[#232f3e] text-white px-4 py-1.5 flex items-center justify-between text-xs font-semibold select-none border-b border-[#19222d] shadow-sm">
+          <div className="flex items-center gap-5">
+            <button
+              onClick={() => setActiveTab('buyer')}
+              className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'buyer'
+                  ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
+                  : 'text-zinc-300 hover:text-white hover:bg-zinc-800/40 border border-transparent'
+              }`}
+            >
+              <svg className="w-4.5 h-4.5 text-[#febd69]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              Storefront
+            </button>
+            
+            {isSeller && (
+              <button
+                onClick={() => setActiveTab('seller')}
+                className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'seller'
+                    ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800/40 border border-transparent'
+                }`}
+              >
+                <svg className="w-4.5 h-4.5 text-[#febd69]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V21M3 6h18" />
+                </svg>
+                Seller Portal
+              </button>
+            )}
+
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'admin'
+                    ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
+                    : 'text-zinc-300 hover:text-white hover:bg-zinc-800/40 border border-transparent'
+                }`}
+              >
+                <svg className="w-4.5 h-4.5 text-[#febd69]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Admin Console
+              </button>
+            )}
+          </div>
+          
+          <div className="hidden sm:block text-zinc-300 font-normal text-[11px]">
+            {activeTab === 'admin' ? (
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Admin Console Connected
+              </span>
+            ) : activeTab === 'seller' ? (
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                Seller Central Active
+              </span>
+            ) : (
+              <span>Prime Store Mode</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'buyer' ? (
+        <>
+          {/* Hero Banner Promo Section */}
       <div className="max-w-[1500px] mx-auto px-4 mt-4 relative">
         <div className="bg-gradient-to-r from-cyan-800 to-indigo-900 rounded-lg p-8 md:p-12 text-white shadow-md flex flex-col justify-center min-h-[220px] relative overflow-hidden">
           {/* Subtle background decoration */}
@@ -485,6 +1309,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
         )}
 
       </div>
+        </>
+      ) : activeTab === 'seller' ? (
+        renderSellerDashboard()
+      ) : (
+        renderAdminDashboard()
+      )}
 
       {/* Cart Sidebar Modal Overlay */}
       {showCart && (

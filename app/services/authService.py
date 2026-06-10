@@ -127,3 +127,9 @@ class AuthService:
         self.user_repository.updateRefreshToken(user_id, new_refresh_token)
 
         return {"access_token": token, "refresh_token": new_refresh_token}
+
+    def get_user_by_id(self, user_id):
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError()
+        return user

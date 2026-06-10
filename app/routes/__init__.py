@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from app.routes.authAPI import create_user, login, logout, refresh_token
+from app.routes.authAPI import create_user, login, logout, refresh_token, auth_me
 from app.routes.dashboradApi import get_dashboard
 
 # creating Blueprint for the current File
@@ -14,6 +14,7 @@ auth_bp.add_url_rule("/register", view_func=create_user, methods=["POST"])
 # adding token authentication
 auth_bp.add_url_rule("/logout", view_func=logout, methods=["POST"])
 auth_bp.add_url_rule("/refresh", view_func=refresh_token, methods=["POST"])
+auth_bp.add_url_rule("/me", view_func=auth_me, methods=["GET"])
 
 # adding dashboard route
 dashboard_bp.add_url_rule("/", view_func=get_dashboard, methods=["GET"])
