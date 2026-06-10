@@ -25,7 +25,14 @@ class AuthService:
         if not user.is_active:
             raise UserIsDeactivated()
 
-        token = JwtHelper.create_access_token(user.id)
+        user_permissions = list({perm.name for group in user.groups for perm in group.permissions})
+        is_super_user = user.is_admin
+
+        token = JwtHelper.create_access_token(
+            user.id,
+            user_permissions=user_permissions,
+            is_super_user=is_super_user
+        )
         refresh_token = JwtHelper.create_refresh_token(user.id)
         self.user_repository.updateRefreshToken(user.id, refresh_token)
 
@@ -104,7 +111,18 @@ class AuthService:
         if not db_token or db_token.token != refresh_token_str:
             raise InvalidTokenError()
 
-        token = JwtHelper.create_access_token(user_id)
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            raise InvalidTokenError()
+
+        user_permissions = list({perm.name for group in user.groups for perm in group.permissions})
+        is_super_user = user.is_admin
+
+        token = JwtHelper.create_access_token(
+            user_id,
+            user_permissions=user_permissions,
+            is_super_user=is_super_user
+        )
         new_refresh_token = JwtHelper.create_refresh_token(user_id)
         self.user_repository.updateRefreshToken(user_id, new_refresh_token)
 

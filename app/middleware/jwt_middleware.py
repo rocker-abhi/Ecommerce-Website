@@ -1,11 +1,11 @@
 from functools import wraps
 
+from flask import g, request
+
 from app.exceptions.middleware_exceptions import (
     InvalidAuthrozaionHeader,
     NoAuthorizationHeader,
 )
-from flask import g, request
-
 from app.utils.jwt_utility import JwtHelper
 
 
@@ -31,3 +31,23 @@ def jwt_required(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+"""
+Request
+   │
+   ▼
+Authentication
+   │
+   ▼
+Identity Context
+   │
+   ▼
+Authorization Engine
+   │
+   ▼
+Business Policies
+   │
+   ▼
+Application Logic
+"""

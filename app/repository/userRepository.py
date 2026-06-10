@@ -47,3 +47,12 @@ class UserRepository:
     def get_group_by_name(self, name):
         from app.models.group import GroupModel
         return g.db.query(GroupModel).filter(GroupModel.name == name).first()
+
+    def get_by_id(self, user_id):
+        import uuid
+        if isinstance(user_id, str):
+            try:
+                user_id = uuid.UUID(user_id)
+            except ValueError:
+                pass
+        return g.db.query(UserModel).filter(UserModel.id == user_id).first()

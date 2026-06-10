@@ -26,3 +26,12 @@ class InvalidAuthrozaionHeader(AppException):
             error_code="INVALID_AUTHORIZATION_HEADER",
             status_code=401,
         )
+
+
+class PermissionDenied(AppException):
+    def __init__(self):
+        super().__init__(
+            message="Permission denied",
+            error_code="PERMISSION_DENIED",
+            status_code=403,
+        )

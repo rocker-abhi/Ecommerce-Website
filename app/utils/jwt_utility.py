@@ -16,7 +16,7 @@ class JwtHelper:
             _jwtSecret = secret
 
     @staticmethod
-    def create_access_token(user_id):
+    def create_access_token(user_id, user_permissions=None, is_super_user=False):
         global _jwtSecret
 
         if not _jwtSecret:
@@ -27,6 +27,8 @@ class JwtHelper:
         payload = {
             "sub": str(user_id),
             "type": "access",
+            "user_permissions": user_permissions or [],
+            "is_super_user": is_super_user,
             "exp": datetime.utcnow() + timedelta(minutes=_access_token_expire_minutes),
         }
         return jwt.encode(payload, _jwtSecret, algorithm="HS256")
