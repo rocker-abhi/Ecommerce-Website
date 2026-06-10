@@ -27,6 +27,8 @@ def jwt_required(func):
 
         g.user_id = payload["sub"]
         g.jwt_payload = payload
+        g.permissions = payload.get("user_permissions", [])
+        g.is_superuser = payload.get("is_super_user", False)
 
         return func(*args, **kwargs)
 

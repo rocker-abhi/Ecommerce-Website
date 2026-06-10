@@ -18,6 +18,8 @@ from sqlalchemy import create_engine, text
 
 # 1. Permission and Role definitions
 ALL_PERMISSIONS = [
+    # Dashboard
+    "dashboard:view",
     # User
     "user:view", "user:create", "user:update", "user:delete",
     # Group
@@ -48,6 +50,7 @@ ALL_PERMISSIONS = [
 
 ROLE_PERMISSIONS = {
     "admin": [
+        "dashboard:view",
         "user:view", "user:create", "user:update", "user:delete",
         "group:view", "group:create", "group:update", "group:delete",
         "permission:view", "permission:create", "permission:update", "permission:delete",

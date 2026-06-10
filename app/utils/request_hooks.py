@@ -23,7 +23,7 @@ def register_request_hook(app:Flask):
         # extra variables
         g.user_id = None
         g.jwt_payload = None
-        g.permission = []
+        g.permissions = []
         g.is_superuser = False
 
     @app.after_request
