@@ -75,6 +75,28 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   };
 
+  // Seller edit product form states
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editProdName, setEditProdName] = useState('');
+  const [editProdPrice, setEditProdPrice] = useState('');
+  const [editProdCategory, setEditProdCategory] = useState<Product['category'] | ''>('');
+  const [editProdSubcategory, setEditProdSubcategory] = useState('');
+  const [editProdImage, setEditProdImage] = useState('');
+  const [editProdDesc, setEditProdDesc] = useState('');
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+  const [editFormSuccess, setEditFormSuccess] = useState<string | null>(null);
+
+  const handleEditImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditProdImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Check if user is admin from JWT token
   const isAdmin = useMemo(() => {
     const token = localStorage.getItem('access_token');
@@ -105,6 +127,97 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       return false;
     }
   }, []);
+
+  // Local state for deleted product IDs to persist deletion on frontend reload
+  const [deletedProductIds, setDeletedProductIds] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem('deleted_product_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDeleteProduct = (productId: number) => {
+    if (window.confirm('Are you sure you want to delete this product listing?')) {
+      const updatedDeletedIds = [...deletedProductIds, productId];
+      setDeletedProductIds(updatedDeletedIds);
+      localStorage.setItem('deleted_product_ids', JSON.stringify(updatedDeletedIds));
+      
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      setSellerProducts(prev => prev.filter(p => p.id !== productId));
+      
+      if (selectedProduct && selectedProduct.id === productId) {
+        setSelectedProduct(null);
+      }
+    }
+  };
+
+  const handleEditClick = (product: Product) => {
+    setEditingProduct(product);
+    setEditProdName(product.name);
+    setEditProdPrice(product.price.toString());
+    setEditProdCategory(product.category);
+    setEditProdSubcategory(product.subcategory || '');
+    setEditProdImage(product.image);
+    setEditProdDesc(product.description || '');
+    setEditFormError(null);
+    setEditFormSuccess(null);
+    setShowAddForm(false); // Close add form if open
+    
+    // Smooth scroll to top where the edit form will render
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEditProductSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFormError(null);
+    setEditFormSuccess(null);
+
+    if (!editingProduct) return;
+
+    if (!editProdName.trim() || !editProdPrice || !editProdCategory || !editProdSubcategory || !editProdDesc.trim() || !editProdImage) {
+      setEditFormError('All fields are required. Please upload an image, select a category/subcategory, and fill in the title, price, and description.');
+      return;
+    }
+
+    const parsedPrice = parseFloat(editProdPrice);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      setEditFormError('Please enter a valid positive price.');
+      return;
+    }
+
+    const updatedProduct: Product = {
+      ...editingProduct,
+      name: editProdName.trim(),
+      price: parsedPrice,
+      category: editProdCategory as Product['category'],
+      subcategory: editProdSubcategory,
+      image: editProdImage,
+      description: editProdDesc.trim()
+    };
+
+    // Update in local state
+    setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+    setSellerProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+
+    // Save update override in localStorage
+    try {
+      const savedEdited = localStorage.getItem('edited_products');
+      const editedProducts: Record<number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+      editedProducts[editingProduct.id] = updatedProduct;
+      localStorage.setItem('edited_products', JSON.stringify(editedProducts));
+    } catch (err) {
+      console.error('Failed to save edited product to localStorage:', err);
+    }
+
+    setEditFormSuccess('Product listing updated successfully!');
+
+    setTimeout(() => {
+      setEditFormSuccess(null);
+      setEditingProduct(null);
+    }, 1500);
+  };
 
   // Set default view on load
   useEffect(() => {
@@ -167,13 +280,37 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
             stock: item.quantity !== undefined ? item.quantity : (productObj.stock !== undefined ? productObj.stock : (item.stock !== undefined ? item.stock : 25))
           };
         });
-        setSellerProducts(mappedProducts);
+        // Filter out locally deleted products and apply edit overrides
+        const savedDeleted = localStorage.getItem('deleted_product_ids');
+        const deletedIds: number[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+        
+        const savedEdited = localStorage.getItem('edited_products');
+        const editedProducts: Record<number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+
+        const filteredMappedProducts = mappedProducts
+          .filter((p: Product) => !deletedIds.includes(p.id))
+          .map((p: Product) => {
+            if (editedProducts[p.id]) {
+              return { ...p, ...editedProducts[p.id] };
+            }
+            return p;
+          });
+
+        setSellerProducts(filteredMappedProducts);
         
         // Sync with general storefront products so they are visible to buyers
         setProducts(prev => {
           const existingIds = new Set(prev.map(p => p.id));
-          const newUnique = mappedProducts.filter((p: Product) => !existingIds.has(p.id));
-          return [...newUnique, ...prev];
+          const newUnique = filteredMappedProducts.filter((p: Product) => !existingIds.has(p.id));
+          const combined = [...newUnique, ...prev];
+          return combined
+            .filter((p: Product) => !deletedIds.includes(p.id))
+            .map((p: Product) => {
+              if (editedProducts[p.id]) {
+                return { ...p, ...editedProducts[p.id] };
+              }
+              return p;
+            });
         });
       } else {
         setSellerMetricsError(response.data?.message || 'Failed to load seller catalog');
@@ -859,6 +996,159 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
           </div>
         )}
 
+        {/* Edit Product Form Collapse */}
+        {editingProduct && (
+          <div className="bg-white border border-zinc-200 rounded-sm p-6 mb-6 shadow-xs animate-fade-in max-w-2xl">
+            <div className="flex justify-between items-center mb-4 border-b border-zinc-200 pb-2">
+              <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider">
+                Edit Catalog Product: {editingProduct.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingProduct(null)}
+                className="text-zinc-400 hover:text-zinc-600 font-semibold text-xs flex items-center gap-0.5 cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </button>
+            </div>
+            
+            {editFormError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded text-xs mb-4">
+                {editFormError}
+              </div>
+            )}
+
+            {editFormSuccess && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2.5 rounded text-xs mb-4">
+                {editFormSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleEditProductSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ergonomic Bluetooth Mouse"
+                  value={editProdName}
+                  onChange={(e) => setEditProdName(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Category *</label>
+                <select
+                  value={editProdCategory}
+                  onChange={(e: any) => {
+                    const cat = e.target.value;
+                    setEditProdCategory(cat);
+                    setEditProdSubcategory('');
+                  }}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white cursor-pointer"
+                  required
+                >
+                  <option value="">-- Select Category --</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Apparel">Apparel</option>
+                  <option value="Home">Home</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Accessories">Accessories</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Subcategory *</label>
+                <select
+                  value={editProdSubcategory}
+                  onChange={(e) => setEditProdSubcategory(e.target.value)}
+                  disabled={!editProdCategory}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white cursor-pointer disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">
+                    {editProdCategory ? '-- Select Subcategory --' : '-- Select Category First --'}
+                  </option>
+                  {editProdCategory &&
+                    CATEGORY_SUBCATEGORIES[editProdCategory as Product['category']].map((sub) => (
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Price ($) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="e.g. 29.99"
+                  value={editProdPrice}
+                  onChange={(e) => setEditProdPrice(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Image *</label>
+                <div className="flex flex-col sm:flex-row gap-4 items-center mt-1">
+                  <label className="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-white border border-zinc-300 rounded hover:bg-zinc-50 text-zinc-700 cursor-pointer text-center shadow-2xs transition-colors">
+                    Update Image from Storage
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditImageFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {editProdImage && (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={editProdImage}
+                        alt="Preview"
+                        className="w-12 h-12 object-contain bg-zinc-50 border border-zinc-200 p-0.5 rounded-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditProdImage('')}
+                        className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Description *</label>
+                <textarea
+                  rows={3}
+                  placeholder="Detail the key features, warranty details, and specifications..."
+                  value={editProdDesc}
+                  onChange={(e) => setEditProdDesc(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white resize-none"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="sm:col-span-2 bg-[#febd69] hover:bg-[#f3a847] text-zinc-900 font-bold py-2.5 text-xs rounded shadow-xs mt-2 border border-zinc-400/50 cursor-pointer active:scale-[0.99] transition-all"
+              >
+                Save Changes to Listing
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Analytics Statistics Panel */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-6">
           {/* Total Store Revenue */}
@@ -959,6 +1249,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
                   <th className="px-4 py-3">Price</th>
                   <th className="px-4 py-3">Stock Level</th>
                   <th className="px-5 py-3">SKU</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1002,6 +1293,22 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
                         </span>
                       </td>
                       <td className="px-5 py-3 font-mono text-zinc-400">{sku}</td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEditClick(product)}
+                            className="px-2.5 py-1 text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 border border-zinc-300 rounded transition-all cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="px-2.5 py-1 text-[11px] font-bold text-red-600 hover:text-white border border-red-200 hover:bg-red-600 hover:border-red-600 rounded transition-all cursor-pointer active:scale-95 shadow-2xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1423,13 +1730,24 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
                       <span className="text-[11px] font-bold mt-1">{formattedPrice.cents}</span>
                     </div>
 
-                    {/* Yellow Button */}
-                    <button
-                      onClick={() => addToCart(p)}
-                      className="w-full amazon-btn-primary py-1.5 px-3 text-xs font-normal shadow-sm"
-                    >
-                      Add to Cart
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => addToCart(p)}
+                        className="flex-1 amazon-btn-primary py-1.5 px-3 text-xs font-normal shadow-sm"
+                      >
+                        Add to Cart
+                      </button>
+                      {(isSeller || isAdmin) && (
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="px-2.5 py-1.5 text-xs font-bold text-red-600 hover:text-white border border-red-200 hover:bg-red-600 hover:border-red-600 rounded shadow-sm transition-all cursor-pointer active:scale-95"
+                          title="Delete product listing"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                 </div>
