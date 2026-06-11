@@ -1,22 +1,60 @@
+from flask import g, jsonify, make_response, request
+from flask.views import MethodView
 
-from flask import MethodView, g
 from app.middleware.jwt_middleware import jwt_required
-from app.middleware.permission_check_middleware import permission_requried
-from app.services.au
+from app.services.product_service import ProductService
+
+product_service = ProductService()
+
 
 class ProductView(MethodView):
-
-
     @jwt_required
-    def get(self):
+    def post(self):
+        data = request.get_json()
         user_id = g.user_id
-
-
-    def post(sef):
-        pass
-
-    def put(self):
-        pass
-
-    def delete(self):
-        pass
+        image_url = data.get("image_url")
+        
+        saved_image_url = image_url
+        if image_url and image_url.startswith("data:"):
+            try:
+                import base64
+                import io
+                from werkzeug.datastructures import FileStorage
+                from app.utils.fileHandling.local_fs_operation import FileHandler
+                
+                header, base64_data = image_url.split(",", 1)
+                mime_type = header.split(";")[0].split(":")[1]
+                extension = mime_type.split("/")[1]
+                
+                if "jpeg" in extension:
+                    extension = "jpg"
+                    
+                file_bytes = base64.b64decode(base64_data)
+                file_stream = io.BytesIO(file_bytes)
+                file_storage = FileStorage(
+                    stream=file_stream,
+                    filename=f"upload.{extension}",
+                    content_type=mime_type
+                )
+                
+                relative_path = FileHandler.save_file(file_storage, "product")
+                saved_image_url = f"/uploads/{relative_path}"
+            except Exception as e:
+                pass
+        
+        product_data = product_service.create_product_and_inventory(
+            user_id=user_id,
+            name=data.get("name"),
+            price=data.get("price"),
+            description=data.get("description"),
+            image_url=saved_image_url,
+            category_name=data.get("category"),
+            subcategory_name=data.get("subcategory")
+        )
+        
+        response_payload = {
+            "success": True,
+            "message": "Product listed successfully",
+            "data": product_data
+        }
+        return make_response(jsonify(response_payload))

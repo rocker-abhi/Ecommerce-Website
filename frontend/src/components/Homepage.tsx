@@ -48,6 +48,11 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
 
+  // Seller metrics and dashboard data state
+  const [sellerProducts, setSellerProducts] = useState<Product[]>([]);
+  const [loadingSellerMetrics, setLoadingSellerMetrics] = useState(false);
+  const [sellerMetricsError, setSellerMetricsError] = useState<string | null>(null);
+
   // Seller new product form states
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProdName, setNewProdName] = useState('');
@@ -140,11 +145,58 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   };
 
+  const fetchSellerData = async () => {
+    setLoadingSellerMetrics(true);
+    setSellerMetricsError(null);
+    try {
+      const response = await apiClient.get('/dashboard/seller');
+      if (response.data && response.data.success) {
+        const rawData = response.data.data || [];
+        const mappedProducts = rawData.map((item: any) => {
+          const productObj = item.product || item;
+          return {
+            id: productObj.id || item.id || Math.floor(Math.random() * 100000),
+            name: productObj.name || item.name || 'Unnamed Product',
+            price: parseFloat(productObj.price) || parseFloat(item.price) || 0.0,
+            category: productObj.category?.name || productObj.category || item.category || 'Electronics',
+            subcategory: productObj.subcategory?.name || productObj.subcategory || item.subcategory || '',
+            rating: parseFloat(productObj.rating) || parseFloat(item.rating) || 5.0,
+            image: productObj.image_url || productObj.image || item.image || 'https://picsum.photos/id/120/400/300',
+            description: productObj.description || item.description || '',
+            sku: item.sku || productObj.sku || `SKU-EL-${(productObj.id || item.id) * 13 + 104}`,
+            stock: item.quantity !== undefined ? item.quantity : (productObj.stock !== undefined ? productObj.stock : (item.stock !== undefined ? item.stock : 25))
+          };
+        });
+        setSellerProducts(mappedProducts);
+        
+        // Sync with general storefront products so they are visible to buyers
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newUnique = mappedProducts.filter((p: Product) => !existingIds.has(p.id));
+          return [...newUnique, ...prev];
+        });
+      } else {
+        setSellerMetricsError(response.data?.message || 'Failed to load seller catalog');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'An error occurred while fetching seller dashboard data';
+      setSellerMetricsError(msg);
+    } finally {
+      setLoadingSellerMetrics(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'admin' && isAdmin) {
       fetchMetrics();
     }
   }, [activeTab, isAdmin]);
+
+  useEffect(() => {
+    if (activeTab === 'seller' && isSeller) {
+      fetchSellerData();
+    }
+  }, [activeTab, isSeller]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
@@ -529,7 +581,44 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       );
     }
 
-    const handleAddProductSubmit = (e: React.FormEvent) => {
+    if (loadingSellerMetrics && sellerProducts.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-32 text-center min-h-[300px]">
+          <div className="w-10 h-10 border-4 border-[#febd69] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-zinc-500 text-xs font-semibold mt-4">Connecting to seller portal...</span>
+        </div>
+      );
+    }
+
+    if (sellerMetricsError) {
+      return (
+        <div className="max-w-lg mx-auto my-16 p-8 bg-white border border-red-200 rounded-lg shadow-sm text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-zinc-950">Failed to Load Seller Dashboard</h3>
+          <p className="text-zinc-600 text-xs mt-1 leading-normal">{sellerMetricsError}</p>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => window.location.href = '/?tab=buyer'}
+              className="flex-1 amazon-btn-secondary py-2 text-xs font-semibold"
+            >
+              Back to Store
+            </button>
+            <button
+              onClick={fetchSellerData}
+              className="flex-1 amazon-btn-primary py-2 text-xs font-semibold"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const handleAddProductSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setFormError(null);
       setFormSuccess(null);
@@ -545,38 +634,58 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
         return;
       }
 
-      // Create new product
-      const newId = products.length + 1;
-      const generatedSku = `SKU-${(newProdCategory as string).substring(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
-      
-      const newProduct: Product = {
-        id: newId,
-        name: newProdName.trim(),
-        price: parsedPrice,
-        category: newProdCategory as Product['category'],
-        subcategory: newProdSubcategory,
-        rating: 5.0,
-        image: newProdImage,
-        description: newProdDesc.trim(),
-        sku: generatedSku,
-        stock: 50 // Default stock level
-      };
+      try {
+        const response = await apiClient.post('/product', {
+          name: newProdName.trim(),
+          price: parsedPrice,
+          description: newProdDesc.trim(),
+          category: newProdCategory,
+          subcategory: newProdSubcategory,
+          image_url: newProdImage
+        });
 
-      setProducts(prev => [newProduct, ...prev]);
-      setFormSuccess('Product listed successfully in catalog!');
-      
-      // Clear form
-      setNewProdName('');
-      setNewProdPrice('');
-      setNewProdCategory('');
-      setNewProdSubcategory('');
-      setNewProdImage('');
-      setNewProdDesc('');
+        // Determine created product values from response
+        const resData = response.data?.data || response.data || {};
+        const newId = resData.id || products.length + 1;
+        const sku = resData.sku || `SKU-${(newProdCategory as string).substring(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+        const stock = resData.stock !== undefined ? resData.stock : 50;
 
-      setTimeout(() => {
-        setFormSuccess(null);
-        setShowAddForm(false);
-      }, 1500);
+        const newProduct: Product = {
+          id: newId,
+          name: newProdName.trim(),
+          price: parsedPrice,
+          category: newProdCategory as Product['category'],
+          subcategory: newProdSubcategory,
+          rating: 5.0,
+          image: newProdImage,
+          description: newProdDesc.trim(),
+          sku: sku,
+          stock: stock
+        };
+
+        setProducts(prev => [newProduct, ...prev]);
+        setSellerProducts(prev => [newProduct, ...prev]);
+        setFormSuccess('Product listed successfully in catalog!');
+        
+        // Clear form
+        setNewProdName('');
+        setNewProdPrice('');
+        setNewProdCategory('');
+        setNewProdSubcategory('');
+        setNewProdImage('');
+        setNewProdDesc('');
+
+        // Trigger a fresh fetch from /dashboard/seller to sync with database changes
+        fetchSellerData();
+
+        setTimeout(() => {
+          setFormSuccess(null);
+          setShowAddForm(false);
+        }, 1500);
+      } catch (err: any) {
+        const msg = err.response?.data?.message || err.message || 'An error occurred while listing the product on the storefront';
+        setFormError(msg);
+      }
     };
 
     return (
@@ -777,7 +886,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Your Active Listings</span>
-                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{products.length}</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{sellerProducts.length}</span>
               </div>
               <div className="p-2 bg-sky-50 rounded-sm text-sky-600 border border-sky-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -853,7 +962,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
+                {sellerProducts.map((product) => {
                   const sku = product.sku || `SKU-EL-${product.id * 13 + 104}`;
                   const stock = product.stock !== undefined ? product.stock : 25;
                   
