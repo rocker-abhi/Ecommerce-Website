@@ -11,6 +11,11 @@ class CategoryModel(BaseModel):
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=True)
 
+    # One-to-many relationship with SubCategoryModel
+    subcategories: Mapped[List["SubCategoryModel"]] = relationship(
+        "SubCategoryModel", back_populates="category", cascade="all, delete-orphan"
+    )
+
     # One-to-many relationship with ProductModel
     products: Mapped[List["ProductModel"]] = relationship(
         "ProductModel", back_populates="category", cascade="all, delete-orphan"

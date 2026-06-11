@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from app.routes.authAPI import create_user, login, logout, refresh_token, auth_me
+from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token
 from app.routes.dashboradApi import get_dashboard
 
 # creating Blueprint for the current File

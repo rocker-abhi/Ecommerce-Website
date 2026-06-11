@@ -6,61 +6,29 @@ interface Product {
   name: string;
   price: number;
   category: 'Electronics' | 'Apparel' | 'Home' | 'Fitness' | 'Accessories';
+  subcategory?: string;
   rating: number;
   image: string;
   description: string;
+  sku?: string;
+  stock?: number;
 }
 
-interface DashboardProps {
+const CATEGORY_SUBCATEGORIES: Record<Product['category'], string[]> = {
+  Electronics: ['Mobile Phones', 'Laptops', 'Headphones', 'Smartwatches', 'Cameras'],
+  Apparel: ["Men's Wear", "Women's Wear", "Kids' Wear", 'Footwear', 'Activewear'],
+  Home: ['Furniture', 'Kitchenware', 'Home Decor', 'Bedding', 'Lighting'],
+  Fitness: ['Gym Equipment', 'Yoga & Pilates', 'Supplements', 'Sportswear', 'Outdoor Gear'],
+  Accessories: ['Bags & Backpacks', 'Watches', 'Sunglasses', 'Jewelry', 'Wallets']
+};
+
+interface HomepageProps {
   userEmail: string;
   onLogout: () => void;
 }
 
-// Generates 50 mock products with premium design details suited for Amazon
-const generateMockProducts = (): Product[] => {
-  const categories: Product['category'][] = ['Electronics', 'Apparel', 'Home', 'Fitness', 'Accessories'];
-  const baseProducts = [
-    { name: 'Echo Sound Wireless Headphones', desc: 'Active noise-canceling smart wireless over-ear headphones with 40h playback.' },
-    { name: 'Halo Smart Watch Active', desc: 'AMOLED display fitness and health tracking smartwatch with integrated GPS.' },
-    { name: 'KeyChron mechanical keyboard', desc: 'RGB hot-swappable tactile mechanical keyboard with premium switches.' },
-    { name: 'ErgoComfort Office Seat', desc: 'High-back ergonomic mesh chair with adjustable headrest & armrests.' },
-    { name: 'UltraVision 34" Curved Monitor', desc: '144Hz screen curved ultrawide gaming and professional monitor.' },
-    { name: 'Apex Wireless Precision Mouse', desc: 'Ergonomic precision mouse with high-accuracy optical tracking sensor.' },
-    { name: 'Essential Cotton Fleece Jacket', desc: 'Ultra-soft organic cotton heavyweight streetwear hoodie with pockets.' },
-    { name: 'Navigator Canvas Duffel', desc: 'Weather-resistant premium canvas travel bag and athletic duffel.' },
-    { name: 'SpeedRun carbon sole trainers', desc: 'Lightweight breathable mesh athletic runners with carbon plate.' },
-    { name: 'Nordic Ceramic Coffee Mug', desc: 'Minimalist double-walled insulated matte black ceramic mug set.' }
-  ];
-
-  const products: Product[] = [];
-  for (let i = 1; i <= 50; i++) {
-    const base = baseProducts[(i - 1) % baseProducts.length];
-    const category = categories[(i - 1) % categories.length];
-    
-    // Vary the price, rating, and details slightly based on index
-    const price = Math.round((24.99 + ((i * 11) % 180) + ((i * 3) % 10) / 10) * 100) / 100;
-    const rating = Math.round((3.8 + ((i * 4) % 13) / 10) * 10) / 10;
-    
-    const imgId = 110 + i;
-    const image = `https://picsum.photos/id/${imgId}/400/300`;
-
-    products.push({
-      id: i,
-      name: `${base.name} (${category} Pack V${Math.ceil(i / 10)})`,
-      price,
-      category,
-      rating: rating > 5 ? 5 : rating,
-      image,
-      description: `${base.desc} Rated choice product for home, office, and travel.`
-    });
-  }
-  return products;
-};
-
-const MOCK_PRODUCTS = generateMockProducts();
-
-export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc' | 'rating'>('default');
@@ -84,13 +52,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProdName, setNewProdName] = useState('');
   const [newProdPrice, setNewProdPrice] = useState('');
-  const [newProdCategory, setNewProdCategory] = useState<Product['category']>('Electronics');
-  const [newProdStock, setNewProdStock] = useState('25');
-  const [newProdSKU, setNewProdSKU] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState<Product['category'] | ''>('');
+  const [newProdSubcategory, setNewProdSubcategory] = useState('');
   const [newProdImage, setNewProdImage] = useState('');
   const [newProdDesc, setNewProdDesc] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProdImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Check if user is admin from JWT token
   const isAdmin = useMemo(() => {
@@ -125,12 +103,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
 
   // Set default view on load
   useEffect(() => {
-    if (isAdmin) {
-      setActiveTab('admin');
-    } else if (isSeller) {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'seller' && isSeller) {
       setActiveTab('seller');
-    } else {
+    } else if (tabParam === 'admin' && isAdmin) {
+      setActiveTab('admin');
+    } else if (tabParam === 'buyer') {
       setActiveTab('buyer');
+    } else {
+      if (isAdmin) {
+        setActiveTab('admin');
+      } else if (isSeller) {
+        setActiveTab('seller');
+      } else {
+        setActiveTab('buyer');
+      }
     }
   }, [isAdmin, isSeller]);
 
@@ -251,7 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             </div>
           </div>
           <button
-            onClick={() => setActiveTab('buyer')}
+            onClick={() => window.location.href = '/?tab=buyer'}
             className="w-full mt-6 amazon-btn-primary py-2 px-4 text-xs font-semibold"
           >
             Return to Buyer Dashboard
@@ -281,7 +269,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
           <p className="text-zinc-600 text-xs mt-1 leading-normal">{metricsError}</p>
           <div className="flex gap-3 mt-6">
             <button
-              onClick={() => setActiveTab('buyer')}
+              onClick={() => window.location.href = '/?tab=buyer'}
               className="flex-1 amazon-btn-secondary py-2 text-xs font-semibold"
             >
               Back to Store
@@ -532,7 +520,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             Your account does not have permission to access the seller portal.
           </p>
           <button
-            onClick={() => setActiveTab('buyer')}
+            onClick={() => window.location.href = '/?tab=buyer'}
             className="w-full mt-6 amazon-btn-primary py-2 px-4 text-xs font-semibold"
           >
             Return to Store
@@ -546,8 +534,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
       setFormError(null);
       setFormSuccess(null);
 
-      if (!newProdName.trim() || !newProdPrice || !newProdStock || !newProdSKU.trim() || !newProdDesc.trim()) {
-        setFormError('All fields marked with * are required.');
+      if (!newProdName.trim() || !newProdPrice || !newProdCategory || !newProdSubcategory || !newProdDesc.trim() || !newProdImage) {
+        setFormError('All fields are required. Please upload an image file, select a category/subcategory, and fill in the title, price, and description.');
         return;
       }
 
@@ -557,24 +545,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
         return;
       }
 
-      const parsedStock = parseInt(newProdStock, 10);
-      if (isNaN(parsedStock) || parsedStock < 0) {
-        setFormError('Please enter a valid stock quantity.');
-        return;
-      }
-
       // Create new product
       const newId = products.length + 1;
-      const imageUrl = newProdImage.trim() || `https://picsum.photos/id/${110 + newId}/400/300`;
+      const generatedSku = `SKU-${(newProdCategory as string).substring(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
       
       const newProduct: Product = {
         id: newId,
         name: newProdName.trim(),
         price: parsedPrice,
-        category: newProdCategory,
+        category: newProdCategory as Product['category'],
+        subcategory: newProdSubcategory,
         rating: 5.0,
-        image: imageUrl,
-        description: newProdDesc.trim()
+        image: newProdImage,
+        description: newProdDesc.trim(),
+        sku: generatedSku,
+        stock: 50 // Default stock level
       };
 
       setProducts(prev => [newProduct, ...prev]);
@@ -583,8 +568,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
       // Clear form
       setNewProdName('');
       setNewProdPrice('');
-      setNewProdStock('25');
-      setNewProdSKU('');
+      setNewProdCategory('');
+      setNewProdSubcategory('');
       setNewProdImage('');
       setNewProdDesc('');
 
@@ -659,9 +644,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 <label className="text-[11px] font-bold text-zinc-600 uppercase">Category *</label>
                 <select
                   value={newProdCategory}
-                  onChange={(e: any) => setNewProdCategory(e.target.value)}
+                  onChange={(e: any) => {
+                    const cat = e.target.value;
+                    setNewProdCategory(cat);
+                    setNewProdSubcategory('');
+                  }}
                   className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white cursor-pointer"
+                  required
                 >
+                  <option value="">-- Select Category --</option>
                   <option value="Electronics">Electronics</option>
                   <option value="Apparel">Apparel</option>
                   <option value="Home">Home</option>
@@ -671,18 +662,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-zinc-600 uppercase">SKU / Code *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. EL-MOU-990"
-                  value={newProdSKU}
-                  onChange={(e) => setNewProdSKU(e.target.value)}
-                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Subcategory *</label>
+                <select
+                  value={newProdSubcategory}
+                  onChange={(e) => setNewProdSubcategory(e.target.value)}
+                  disabled={!newProdCategory}
+                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white cursor-pointer disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
                   required
-                />
+                >
+                  <option value="">
+                    {newProdCategory ? '-- Select Subcategory --' : '-- Select Category First --'}
+                  </option>
+                  {newProdCategory &&
+                    CATEGORY_SUBCATEGORIES[newProdCategory as Product['category']].map((sub) => (
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
+                    ))}
+                </select>
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 sm:col-span-2">
                 <label className="text-[11px] font-bold text-zinc-600 uppercase">Price ($) *</label>
                 <input
                   type="number"
@@ -696,28 +696,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-zinc-600 uppercase">Inventory / Stock *</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 50"
-                  value={newProdStock}
-                  onChange={(e) => setNewProdStock(e.target.value)}
-                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
-                  required
-                />
-              </div>
-
               <div className="flex flex-col gap-1 sm:col-span-2">
-                <label className="text-[11px] font-bold text-zinc-600 uppercase">Image URL (Optional)</label>
-                <input
-                  type="url"
-                  placeholder="e.g. https://images.unsplash.com/... (leave blank for random picsum)"
-                  value={newProdImage}
-                  onChange={(e) => setNewProdImage(e.target.value)}
-                  className="bg-zinc-50 border border-zinc-300 rounded px-3 py-2 text-xs text-zinc-900 outline-none focus:border-amber-500 focus:bg-white"
-                />
+                <label className="text-[11px] font-bold text-zinc-600 uppercase">Product Image *</label>
+                <div className="flex flex-col sm:flex-row gap-4 items-center mt-1">
+                  <label className="w-full sm:w-auto px-4 py-2 text-xs font-semibold bg-white border border-zinc-300 rounded hover:bg-zinc-50 text-zinc-700 cursor-pointer text-center shadow-2xs transition-colors">
+                    Select Image from Storage
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileChange}
+                      className="hidden"
+                      required={!newProdImage}
+                    />
+                  </label>
+                  {newProdImage && (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={newProdImage}
+                        alt="Preview"
+                        className="w-12 h-12 object-contain bg-zinc-50 border border-zinc-200 p-0.5 rounded-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewProdImage('')}
+                        className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-1 sm:col-span-2">
@@ -750,7 +758,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Store Sales Revenue</span>
-                <span className="text-2xl font-bold text-zinc-950 mt-1.5">$2,840.50</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">$0.00</span>
               </div>
               <div className="p-2 bg-amber-50 rounded-sm text-amber-600 border border-amber-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -769,7 +777,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Your Active Listings</span>
-                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{products.filter(p => p.id > 50 || p.id % 7 === 0).length}</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">{products.length}</span>
               </div>
               <div className="p-2 bg-sky-50 rounded-sm text-sky-600 border border-sky-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -788,7 +796,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Store Catalog Pageviews</span>
-                <span className="text-2xl font-bold text-zinc-950 mt-1.5">1,245</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">0</span>
               </div>
               <div className="p-2 bg-emerald-50 rounded-sm text-emerald-600 border border-emerald-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -797,8 +805,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 </svg>
               </div>
             </div>
-            <div className="text-[10px] text-emerald-600 font-semibold mt-2 flex items-center gap-1">
-              <span>↑ 12% increase this week</span>
+            <div className="text-[10px] text-zinc-500 mt-2">
+              No catalog views recorded
             </div>
           </div>
 
@@ -808,7 +816,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Fulfillments Pending</span>
-                <span className="text-2xl font-bold text-zinc-950 mt-1.5">2</span>
+                <span className="text-2xl font-bold text-zinc-950 mt-1.5">0</span>
               </div>
               <div className="p-2 bg-red-50 rounded-sm text-red-600 border border-red-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -816,8 +824,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 </svg>
               </div>
             </div>
-            <div className="text-[10px] text-red-600 font-bold mt-2">
-              Requires shipping labeling
+            <div className="text-[10px] text-zinc-500 mt-2">
+              No pending shipments
             </div>
           </div>
         </div>
@@ -845,9 +853,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 </tr>
               </thead>
               <tbody>
-                {products.filter(p => p.id > 50 || p.id % 7 === 0).map((product) => {
-                  const sku = product.id > 50 ? `SKU-EL-${product.id * 13 + 104}` : `SKU-MOCK-${product.id}`;
-                  const stock = product.id > 50 ? 25 : (product.id * 3) % 45;
+                {products.map((product) => {
+                  const sku = product.sku || `SKU-EL-${product.id * 13 + 104}`;
+                  const stock = product.stock !== undefined ? product.stock : 25;
                   
                   let stockBadge = 'text-green-700 font-bold bg-green-50 border border-green-100';
                   let stockText = `In Stock (${stock})`;
@@ -872,7 +880,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                           {product.name}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-zinc-600 font-medium">{product.category}</td>
+                      <td className="px-4 py-3 text-zinc-600 font-medium">
+                        <div className="font-semibold">{product.category}</div>
+                        {product.subcategory && (
+                          <div className="text-[10px] text-zinc-400 font-normal mt-0.5">{product.subcategory}</div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-bold text-[#b12704]">${product.price.toFixed(2)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] uppercase ${stockBadge}`}>
@@ -1011,7 +1024,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
         <div className="bg-[#232f3e] text-white px-4 py-1.5 flex items-center justify-between text-xs font-semibold select-none border-b border-[#19222d] shadow-sm">
           <div className="flex items-center gap-5">
             <button
-              onClick={() => setActiveTab('buyer')}
+              onClick={() => window.location.href = '/?tab=buyer'}
               className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'buyer'
                   ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
@@ -1026,7 +1039,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
             
             {isSeller && (
               <button
-                onClick={() => setActiveTab('seller')}
+                onClick={() => window.location.href = '/?tab=seller'}
                 className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'seller'
                     ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
@@ -1043,7 +1056,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
 
             {isAdmin && (
               <button
-                onClick={() => setActiveTab('admin')}
+                onClick={() => window.location.href = '/?tab=admin'}
                 className={`py-1 px-3.5 rounded-sm transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'admin'
                     ? 'bg-zinc-800 text-white border border-zinc-700 shadow-inner'
@@ -1092,7 +1105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
               Upgrade your home and office setup.
             </h2>
             <p className="text-zinc-200 text-sm mt-2 leading-relaxed">
-              Unlock savings on 50 selected products. Fast, free delivery with Prime memberships.
+              Unlock savings on all selected products. Fast, free delivery with Prime memberships.
             </p>
             
             <div className="flex gap-3 mt-6">
@@ -1228,7 +1241,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 >
                   <div>
                     {/* Category Label */}
-                    <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5">{p.category}</div>
+                    <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5 flex items-center gap-1 flex-wrap">
+                      <span>{p.category}</span>
+                      {p.subcategory && (
+                        <>
+                          <span className="text-zinc-300 font-normal">›</span>
+                          <span className="text-zinc-400 font-semibold">{p.subcategory}</span>
+                        </>
+                      )}
+                    </div>
                     
                     {/* Image */}
                     <div 
@@ -1447,7 +1468,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ userEmail, onLogout }) => 
                 {/* Right side Metadata */}
                 <div className="flex-1 text-left">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">
-                    {selectedProduct.category} Catalog Item
+                    {selectedProduct.category} {selectedProduct.subcategory ? `> ${selectedProduct.subcategory}` : ''} Catalog Item
                   </span>
                   <h3 className="text-lg font-bold text-zinc-950 leading-snug">{selectedProduct.name}</h3>
                   

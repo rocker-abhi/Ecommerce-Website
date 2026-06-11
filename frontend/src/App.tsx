@@ -2,24 +2,84 @@ import { useState, useEffect } from 'react';
 import apiClient from './services/api';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
-import { Dashboard } from './components/Dashboard';
+import { Homepage } from './components/Homepage';
 
 type View = 'login' | 'register' | 'dashboard';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('login');
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Load auth session on startup
   useEffect(() => {
-    const savedToken = localStorage.getItem('access_token');
-    const savedEmail = localStorage.getItem('userEmail');
-    if (savedToken && savedEmail) {
-      setUserEmail(savedEmail);
-      setCurrentView('dashboard');
-    } else {
-      setCurrentView('login');
-    }
+    const verifySession = async () => {
+      const savedToken = localStorage.getItem('access_token');
+      if (!savedToken) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('userEmail');
+        setUserEmail(null);
+        setCurrentView('login');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await apiClient.get('/auth/me');
+        const user = response.data?.data;
+        if (user && user.email) {
+          setUserEmail(user.email);
+          localStorage.setItem('userEmail', user.email);
+          setCurrentView('dashboard');
+        } else {
+          throw new Error('Invalid user response');
+        }
+      } catch (err: any) {
+        console.error('Session verification failed:', err);
+        const errCode = err.response?.data?.data?.error_code;
+
+        if (errCode === 'TOKEN_EXPIRED') {
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            try {
+              const refreshResponse = await apiClient.post('/auth/refresh', {
+                refresh_token: refreshToken
+              });
+              const newTokens = refreshResponse.data?.data;
+              if (newTokens?.access_token && newTokens?.refresh_token) {
+                localStorage.setItem('access_token', newTokens.access_token);
+                localStorage.setItem('refresh_token', newTokens.refresh_token);
+
+                // Retry auth/me
+                const retryResponse = await apiClient.get('/auth/me');
+                const user = retryResponse.data?.data;
+                if (user && user.email) {
+                  setUserEmail(user.email);
+                  localStorage.setItem('userEmail', user.email);
+                  setCurrentView('dashboard');
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch (refreshErr) {
+              console.error('Token refresh failed:', refreshErr);
+            }
+          }
+        }
+
+        // Clear everything and route to login if we get any other error or if refresh flow failed
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('userEmail');
+        setUserEmail(null);
+        setCurrentView('login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifySession();
   }, []);
 
   const handleLoginSuccess = (_token: string, email: string) => {
@@ -71,7 +131,7 @@ function App() {
         );
       case 'dashboard':
         return (
-          <Dashboard
+          <Homepage
             userEmail={userEmail || ''}
             onLogout={handleLogout}
           />
@@ -86,6 +146,14 @@ function App() {
         );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 font-sans">
+        <div className="text-zinc-600 text-sm animate-pulse">Verifying session...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 font-sans">

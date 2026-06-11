@@ -1,4 +1,5 @@
 from flask import jsonify, make_response
+
 from app.middleware.jwt_middleware import jwt_required
 from app.middleware.permission_check_middleware import permission_requried
 from app.services.dashboardService import DashboardService
@@ -13,6 +14,6 @@ def get_dashboard():
     response_payload = {
         "success": True,
         "message": "Dashboard metrics retrieved successfully",
-        "data": metrics
+        "data": metrics,
     }
     return make_response(jsonify(response_payload))

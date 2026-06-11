@@ -35,3 +35,13 @@ class PermissionDenied(AppException):
             error_code="PERMISSION_DENIED",
             status_code=403,
         )
+
+
+class TokenExpiredError(AppException):
+    def __init__(self):
+        super().__init__(
+            message="Token has expired",
+            error_code="TOKEN_EXPIRED",
+            status_code=401,
+        )
+

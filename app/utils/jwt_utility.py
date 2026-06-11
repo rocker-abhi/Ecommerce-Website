@@ -88,15 +88,19 @@ class JwtHelper:
 
     @staticmethod
     def decode_access_token(access_token: str) -> Dict:
+        global _jwtSecret
         try:
-            if JwtHelper.__verify_access_token(token=access_token):
-                return jwt.decode(access_token, _jwtSecret, algorithms=["HS256"])
-
-            raise Exception("Invalid access token")
+            payload = jwt.decode(access_token, _jwtSecret, algorithms=["HS256"])
+            if payload.get("type") == "access":
+                return payload
+            from app.exceptions.middleware_exceptions import InvalidTokenError
+            raise InvalidTokenError()
         except jwt.ExpiredSignatureError:
-            raise Exception("Access token expired")
+            from app.exceptions.middleware_exceptions import TokenExpiredError
+            raise TokenExpiredError()
         except jwt.InvalidTokenError:
-            raise Exception("Invalid access token")
+            from app.exceptions.middleware_exceptions import InvalidTokenError
+            raise InvalidTokenError()
 
     @staticmethod
     def decode_refresh_token(refresh_token: str) -> Dict:

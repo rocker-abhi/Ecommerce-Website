@@ -13,10 +13,16 @@ class ProductModel(BaseModel):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(String(1000), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    image_url: Mapped[str] = mapped_column(String(500), nullable=True)
 
     category_id: Mapped[uuid.UUID] = mapped_column(
         Uuid,
         ForeignKey("categories.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    subcategory_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("subcategories.id", ondelete="SET NULL"),
         nullable=True
     )
 
@@ -24,9 +30,8 @@ class ProductModel(BaseModel):
     category: Mapped["CategoryModel"] = relationship(
         "CategoryModel", back_populates="products"
     )
-
-    images: Mapped[List["ProductImageModel"]] = relationship(
-        "ProductImageModel", back_populates="product", cascade="all, delete-orphan"
+    subcategory: Mapped["SubCategoryModel"] = relationship(
+        "SubCategoryModel", back_populates="products"
     )
 
     inventory: Mapped["InventoryModel"] = relationship(
