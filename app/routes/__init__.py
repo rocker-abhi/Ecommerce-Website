@@ -3,11 +3,13 @@ from flask import Blueprint
 from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token
 from app.routes.dashboardApi import SellerDashboard, HomepageDashboard
 from app.routes.product_api import ProductView
+from app.routes.cartAPI import CartView
 
 # creating Blueprint for the current File
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 product_bp = Blueprint("product", __name__, url_prefix="/product")
+cart_bp = Blueprint("cart", __name__, url_prefix="/cart")
 
 # Registering Blueprint to the current Blueprint
 auth_bp.add_url_rule("/login", view_func=login, methods=["POST"])
@@ -39,4 +41,18 @@ product_bp.add_url_rule(
     view_func=ProductView.as_view("delete_product"),
     methods=["DELETE", "PUT"],
 )
+
+
+# adding cart route
+cart_bp.add_url_rule(
+    "",
+    view_func=CartView.as_view("cart_get"),
+    methods=["GET"],
+)
+cart_bp.add_url_rule(
+    "/<uuid:product_id>",
+    view_func=CartView.as_view("cart_item"),
+    methods=["POST", "PUT", "DELETE"],
+)
+
 

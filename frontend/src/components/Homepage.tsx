@@ -171,35 +171,82 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   }, [buyerPage, activeTab]);
 
-  // Cart operations
-  const addToCart = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product, quantity: 1 }];
+  const mapBackendCart = (backendCartData: any) => {
+    if (!backendCartData || !backendCartData.items) return [];
+    return backendCartData.items.map((item: any) => {
+      const p = item.product;
+      return {
+        product: {
+          id: p.id,
+          name: p.name || 'Unnamed Product',
+          price: parseFloat(p.price) || 0.0,
+          category: p.category || 'Electronics',
+          subcategory: p.subcategory || '',
+          rating: parseFloat(p.rating) || 5.0,
+          image: p.image_url || p.image || 'https://picsum.photos/id/120/400/300',
+          description: p.description || '',
+          sku: p.sku || '',
+          stock: p.stock !== undefined ? p.stock : 50
+        },
+        quantity: item.quantity
+      };
     });
   };
 
-  const removeFromCart = (productId: string | number) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  const fetchCart = async () => {
+    try {
+      const response = await apiClient.get('/cart');
+      if (response.data && response.data.success) {
+        setCart(mapBackendCart(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to fetch cart:', err);
+    }
   };
 
-  const updateQuantity = (productId: string | number, change: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.product.id === productId) {
-            const newQty = item.quantity + change;
-            return { ...item, quantity: newQty };
-          }
-          return item;
-        })
-        .filter((item) => item.quantity > 0)
-    );
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // Cart operations
+  const addToCart = async (product: Product) => {
+    try {
+      const response = await apiClient.post(`/cart/${product.id}`, { quantity: 1 });
+      if (response.data && response.data.success) {
+        setCart(mapBackendCart(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+    }
+  };
+
+  const removeFromCart = async (productId: string | number) => {
+    try {
+      const response = await apiClient.delete(`/cart/${productId}`);
+      if (response.data && response.data.success) {
+        setCart(mapBackendCart(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to remove from cart:', err);
+    }
+  };
+
+  const updateQuantity = async (productId: string | number, change: number) => {
+    const item = cart.find((i) => i.product.id === productId);
+    if (!item) return;
+    const newQty = item.quantity + change;
+    try {
+      if (newQty <= 0) {
+        await removeFromCart(productId);
+      } else {
+        const response = await apiClient.put(`/cart/${productId}`, { quantity: newQty });
+        if (response.data && response.data.success) {
+          setCart(mapBackendCart(response.data.data));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update quantity:', err);
+    }
   };
 
   // Wishlist operations
