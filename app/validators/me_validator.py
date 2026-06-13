@@ -12,6 +12,7 @@ class MeUserDataSchema(Schema):
     name = fields.Str(required=True)
     age = fields.Int(required=True)
     email = fields.Email(required=True)
+    profile_picture_url = fields.Str(required=False, allow_none=True)
     userType = fields.Function(lambda obj: obj.userType.value if hasattr(obj.userType, 'value') else obj.userType)
     address = fields.Nested(AddressSchema, required=True)
 

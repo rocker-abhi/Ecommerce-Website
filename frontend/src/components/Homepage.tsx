@@ -3,6 +3,8 @@ import apiClient from '../services/api';
 import { Storefront } from './Storefront';
 import { SellerPanel } from './SellerPanel';
 import { AdminPanel } from './AdminPanel';
+import { AccountSettings } from './AccountSettings';
+import { Checkout } from './Checkout';
 
 export interface Product {
   id: string | number;
@@ -45,7 +47,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [showWishlist, setShowWishlist] = useState(false);
 
   // Active dashboard view tab state
-  const [activeTab, setActiveTab] = useState<'buyer' | 'seller' | 'admin'>('buyer');
+  const [activeTab, setActiveTab] = useState<'buyer' | 'seller' | 'admin' | 'settings' | 'checkout'>('buyer');
 
   // Buyer storefront products pagination states
   const [buyerPage, setBuyerPage] = useState(1);
@@ -145,6 +147,8 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       setActiveTab('seller');
     } else if (tabParam === 'admin' && isAdmin) {
       setActiveTab('admin');
+    } else if (tabParam === 'settings') {
+      setActiveTab('settings');
     } else if (tabParam === 'buyer') {
       setActiveTab('buyer');
     } else {
@@ -336,19 +340,42 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
           {/* Right Links info */}
           <div className="flex items-center gap-4">
             
-            <div className="hidden lg:flex flex-col text-left p-1 border border-transparent hover:border-white rounded-sm cursor-pointer select-none text-xs">
-              <span className="text-[10px] text-zinc-300">Hello, {userEmail.split('@')[0]}</span>
-              <span className="font-bold flex items-center gap-1">
-                Account & Lists
-                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21l-12-18h24z" />
-                </svg>
-              </span>
-            </div>
-            
-            <div className="hidden md:flex flex-col text-left p-1 border border-transparent hover:border-white rounded-sm cursor-pointer select-none text-xs">
-              <span className="text-[10px] text-zinc-300">Returns</span>
-              <span className="font-bold">& Orders</span>
+            <div className="relative group hidden lg:block select-none text-xs">
+              <div className="flex flex-col text-left p-1 border border-transparent hover:border-white rounded-sm cursor-pointer">
+                <span className="text-[10px] text-zinc-300">Hello, {userEmail.split('@')[0]}</span>
+                <span className="font-bold flex items-center gap-1">
+                  Account & Lists
+                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21l-12-18h24z" />
+                  </svg>
+                </span>
+              </div>
+              
+              {/* Amazon Dropdown Option */}
+              <div className="absolute right-0 top-full w-60 pt-2 hidden group-hover:block z-50 text-zinc-800">
+                <div className="bg-white rounded-sm shadow-xl py-3 border border-zinc-200">
+                  <div className="px-4 pb-2 border-b border-zinc-150 font-bold text-sm text-zinc-900">
+                    Your Account
+                  </div>
+                  <div className="pt-2">
+                    <a
+                      href="#order-history"
+                      className="block px-4 py-1.5 text-xs text-zinc-700 hover:text-orange-600 hover:underline transition-colors"
+                    >
+                      Order History
+                    </a>
+                    <button
+                      onClick={() => {
+                        setActiveTab('settings');
+                        window.history.pushState(null, '', '/?tab=settings');
+                      }}
+                      className="w-full text-left block px-4 py-1.5 text-xs text-zinc-700 hover:text-orange-600 hover:underline transition-colors cursor-pointer bg-transparent border-0"
+                    >
+                      Manage Account Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Wishlist Button */}
@@ -499,6 +526,10 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
           setShowCart={setShowCart}
           showWishlist={showWishlist}
           setShowWishlist={setShowWishlist}
+          onProceedToCheckout={() => {
+            setActiveTab('checkout');
+            window.history.pushState(null, '', '/?tab=checkout');
+          }}
         />
       )}
 
@@ -513,6 +544,30 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
         <AdminPanel
           isAdmin={isAdmin}
           userEmail={userEmail}
+        />
+      )}
+
+      {activeTab === 'settings' && (
+        <AccountSettings
+          onBackToStore={() => {
+            setActiveTab('buyer');
+            window.history.pushState(null, '', '/?tab=buyer');
+          }}
+        />
+      )}
+
+      {activeTab === 'checkout' && (
+        <Checkout
+          cart={cart}
+          onOrderPlaced={() => {
+            setCart([]);
+            setActiveTab('buyer');
+            window.history.pushState(null, '', '/?tab=buyer');
+          }}
+          onCancel={() => {
+            setActiveTab('buyer');
+            window.history.pushState(null, '', '/?tab=buyer');
+          }}
         />
       )}
 

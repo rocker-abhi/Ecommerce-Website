@@ -2,7 +2,7 @@
 from flask import Flask, g
 import dotenv
 from app.utils.logger import configure_logger
-from app.routes import auth_bp, dashboard_bp, product_bp, cart_bp, wishlist_bp
+from app.routes import auth_bp, dashboard_bp, product_bp, cart_bp, wishlist_bp, address_bp, order_bp
 from app.utils.jwt_utility import JwtHelper
 from app.utils.request_hooks import register_request_hook
 from app.exceptions.global_exception_handler import register_exception_handlers
@@ -51,6 +51,8 @@ if __name__ == "__main__":
     app.register_blueprint(product_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(wishlist_bp)
+    app.register_blueprint(address_bp)
+    app.register_blueprint(order_bp)
 
     if current_dev_environment == 'development':
         # if environment is development then show all the configuration values in the console

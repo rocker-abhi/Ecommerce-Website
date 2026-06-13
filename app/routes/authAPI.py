@@ -121,3 +121,61 @@ def auth_me():
     response = make_response(jsonify(response_payload))
     response.success = True
     return response
+
+
+@jwt_required
+def update_profile():
+    user_id = g.user_id
+    data = request.get_json() or {}
+    name = data.get("name")
+    email = data.get("email")
+    age = data.get("age")
+    profile_picture_url = data.get("profile_picture_url")
+
+    user = auth_service.get_user_by_id(user_id)
+    if name:
+        user.name = name
+    if email:
+        user.email = email
+    if age is not None:
+        user.age = int(age)
+    if profile_picture_url is not None:
+        user.profile_picture_url = profile_picture_url
+
+    g.db.commit()
+    
+    response_payload = {
+        "success": True,
+        "message": "Profile updated successfully",
+        "data": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "age": user.age,
+            "profile_picture_url": user.profile_picture_url,
+            "userType": user.userType
+        }
+    }
+    return make_response(jsonify(response_payload))
+
+
+@jwt_required
+def reset_password():
+    user_id = g.user_id
+    data = request.get_json() or {}
+    password = data.get("password")
+    confirm_password = data.get("confirm_password")
+
+    if not password:
+        return make_response(jsonify({"success": False, "message": "Password is required"}), 400)
+    if password != confirm_password:
+        return make_response(jsonify({"success": False, "message": "Passwords do not match"}), 400)
+
+    user = auth_service.get_user_by_id(user_id)
+    user.set_password(password)
+    g.db.commit()
+
+    return make_response(jsonify({
+        "success": True,
+        "message": "Password reset successfully"
+    }))

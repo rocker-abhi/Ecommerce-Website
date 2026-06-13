@@ -24,6 +24,7 @@ interface StorefrontProps {
   setShowCart: React.Dispatch<React.SetStateAction<boolean>>;
   showWishlist: boolean;
   setShowWishlist: React.Dispatch<React.SetStateAction<boolean>>;
+  onProceedToCheckout?: () => void;
 }
 
 export const Storefront: React.FC<StorefrontProps> = ({
@@ -49,6 +50,7 @@ export const Storefront: React.FC<StorefrontProps> = ({
   setShowCart,
   showWishlist,
   setShowWishlist,
+  onProceedToCheckout,
 }) => {
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -460,10 +462,14 @@ export const Storefront: React.FC<StorefrontProps> = ({
                 
                 <button
                   onClick={() => {
-                    alert('Order placed successfully! (Demo Checkout)');
-                    // Clear cart
-                    cart.forEach(item => removeFromCart(item.product.id));
-                    setShowCart(false);
+                    if (onProceedToCheckout) {
+                      setShowCart(false);
+                      onProceedToCheckout();
+                    } else {
+                      alert('Order placed successfully! (Demo Checkout)');
+                      cart.forEach(item => removeFromCart(item.product.id));
+                      setShowCart(false);
+                    }
                   }}
                   className="w-full amazon-btn-primary py-2.5 rounded-md text-xs font-semibold cursor-pointer"
                 >

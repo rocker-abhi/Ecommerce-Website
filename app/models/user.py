@@ -26,6 +26,11 @@ class UserModel(BaseModel):
         index=True,
     )
 
+    profile_picture_url: Mapped[str] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
     password_hash: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
