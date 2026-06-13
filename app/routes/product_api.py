@@ -2,15 +2,19 @@ from flask import g, jsonify, make_response, request
 from flask.views import MethodView
 
 from app.middleware.jwt_middleware import jwt_required
+from app.middleware.permission_check_middleware import permission_requried
 from app.services.product_service import ProductService
+from app.validators.product_validator import ProductRequestSchema, ProductResponseSchema
 
 product_service = ProductService()
 
 
 class ProductView(MethodView):
     @jwt_required
+    @permission_requried("product:create")
     def post(self):
-        data = request.get_json()
+        req_schema = ProductRequestSchema()
+        data = req_schema.load(request.get_json())
         user_id = g.user_id
         image_url = data.get("image_url")
 
@@ -54,17 +58,17 @@ class ProductView(MethodView):
             subcategory_name=data.get("subcategory"),
         )
 
-        response_payload = {
+        response_schema = ProductResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Product listed successfully",
             "data": product_data,
-        }
+        })
         return make_response(jsonify(response_payload))
 
     @jwt_required
+    @permission_requried("product:delete")
     def delete(self, product_id):
-        # Optional: verify the product belongs to this user
-        # (Though we can also just call delete_product and count on the repository/service layer)
         product_service.delete_product(product_id)
         response_payload = {
             "success": True,
@@ -73,8 +77,10 @@ class ProductView(MethodView):
         return make_response(jsonify(response_payload))
 
     @jwt_required
+    @permission_requried("product:update")
     def put(self, product_id):
-        data = request.get_json()
+        req_schema = ProductRequestSchema()
+        data = req_schema.load(request.get_json())
         image_url = data.get("image_url")
 
         saved_image_url = image_url
@@ -143,9 +149,10 @@ class ProductView(MethodView):
             subcategory_name=data.get("subcategory"),
         )
 
-        response_payload = {
+        response_schema = ProductResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Product updated successfully",
             "data": product_data,
-        }
+        })
         return make_response(jsonify(response_payload))

@@ -31,7 +31,15 @@ else:
 from app.config import get_config
 from app.utils.database import DatabaseHelper
 
-if __name__ == '__main__':
+
+@app.route("/uploads/<path:filename>")
+def serve_uploaded_file(filename):
+    from flask import send_from_directory
+
+    return send_from_directory("uploads", filename)
+
+
+if __name__ == "__main__":
     current_env_config = get_config(current_dev_environment) # getting the configuration of the current environment
 
     # Initialize shared database instance (called once at startup)

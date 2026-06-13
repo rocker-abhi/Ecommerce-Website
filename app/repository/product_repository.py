@@ -11,6 +11,27 @@ from app.utils.fileHandling.local_fs_operation import FileHandler
 
 
 class ProductRepository:
+    @staticmethod
+    def _convert_to_base64(image_url):
+        """Helper to convert relative upload path to base64 Data URL."""
+        if image_url and image_url.startswith("/uploads/"):
+            try:
+                relative_path = image_url.replace("/uploads/", "")
+                abs_path = FileHandler.get_file_path(relative_path)
+                
+                if os.path.exists(abs_path):
+                    ext = abs_path.split(".")[-1].lower()
+                    mime_type = f"image/{ext}"
+                    if ext in ("jpg", "jpeg", "png", "webp"):
+                        mime_type = f"image/{ext}"
+                    
+                    with open(abs_path, "rb") as image_file:
+                        encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                        return f"data:{mime_type};base64,{encoded_string}"
+            except Exception:
+                pass
+        return image_url
+
     def create_product_and_inventory(
         self,
         user_id,
@@ -107,7 +128,7 @@ class ProductRepository:
             "name": product.name,
             "price": float(product.price),
             "description": product.description,
-            "image_url": product.image_url,
+            "image_url": self._convert_to_base64(product.image_url),
             "category": category.name,
             "subcategory": subcategory.name,
             "sku": product.sku,
@@ -208,13 +229,12 @@ class ProductRepository:
             "name": product.name,
             "price": float(product.price),
             "description": product.description,
-            "image_url": product.image_url,
+            "image_url": self._convert_to_base64(product.image_url),
             "category": category.name,
             "subcategory": subcategory.name,
             "sku": product.sku,
             "stock": product.stock,
         }
-
 
     def get_products_by_seller_id(self, user_id):
         """Retrieves products listed by a specific seller, converting local upload images to base64."""
@@ -233,32 +253,13 @@ class ProductRepository:
 
         serialized = []
         for p in results:
-            image_url = p.image_url
-            base64_image = image_url
-            if image_url and image_url.startswith("/uploads/"):
-                try:
-                    relative_path = image_url.replace("/uploads/", "")
-                    abs_path = FileHandler.get_file_path(relative_path)
-                    
-                    if os.path.exists(abs_path):
-                        ext = abs_path.split(".")[-1].lower()
-                        mime_type = f"image/{ext}"
-                        if ext in ("jpg", "jpeg", "png", "webp"):
-                            mime_type = f"image/{ext}"
-                        
-                        with open(abs_path, "rb") as image_file:
-                            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-                            base64_image = f"data:{mime_type};base64,{encoded_string}"
-                except Exception:
-                    pass
-
             serialized.append(
                 {
                     "id": str(p.id),
                     "name": p.name,
                     "description": p.description,
                     "price": float(p.price),
-                    "image_url": base64_image,
+                    "image_url": self._convert_to_base64(p.image_url),
                     "category": p.category.name if p.category else None,
                     "subcategory": p.subcategory.name if p.subcategory else None,
                     "sku": p.sku,
@@ -309,32 +310,13 @@ class ProductRepository:
 
         serialized = []
         for p in results:
-            image_url = p.image_url
-            base64_image = image_url
-            if image_url and image_url.startswith("/uploads/"):
-                try:
-                    relative_path = image_url.replace("/uploads/", "")
-                    abs_path = FileHandler.get_file_path(relative_path)
-                    
-                    if os.path.exists(abs_path):
-                        ext = abs_path.split(".")[-1].lower()
-                        mime_type = f"image/{ext}"
-                        if ext in ("jpg", "jpeg", "png", "webp"):
-                            mime_type = f"image/{ext}"
-                        
-                        with open(abs_path, "rb") as image_file:
-                            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-                            base64_image = f"data:{mime_type};base64,{encoded_string}"
-                except Exception:
-                    pass
-
             serialized.append(
                 {
                     "id": str(p.id),
                     "name": p.name,
                     "description": p.description,
                     "price": float(p.price),
-                    "image_url": base64_image,
+                    "image_url": self._convert_to_base64(p.image_url),
                     "category": p.category.name if p.category else None,
                     "subcategory": p.subcategory.name if p.subcategory else None,
                     "sku": p.sku,
