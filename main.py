@@ -1,19 +1,29 @@
 # importing libraries
-from flask import Flask, g
 import dotenv
-from app.utils.logger import configure_logger
-from app.routes import auth_bp, dashboard_bp, product_bp, cart_bp, wishlist_bp, address_bp, order_bp
-from app.utils.jwt_utility import JwtHelper
-from app.utils.request_hooks import register_request_hook
-from app.exceptions.global_exception_handler import register_exception_handlers
+from flask import Flask
 
-app = Flask(__name__) # create flask app
+from app.exceptions.global_exception_handler import register_exception_handlers
+from app.routes import (
+    address_bp,
+    auth_bp,
+    cart_bp,
+    dashboard_bp,
+    order_bp,
+    product_bp,
+    wishlist_bp,
+)
+from app.utils.jwt_utility import JwtHelper
+from app.utils.logger import configure_logger
+from app.utils.request_hooks import register_request_hook
+from app.utils.limiter import limiter
+
+app = Flask(__name__)  # create flask app
 register_request_hook(app)
 configure_logger("INFO")
 register_exception_handlers(app)
+limiter.init_app(app)
 
-
-app.config['current_env'] = "development"
+app.config["current_env"] = "development"
 dotenv.load_dotenv(".env.dev")
 
 from app.config import get_config
@@ -28,11 +38,15 @@ def serve_uploaded_file(filename):
 
 
 if __name__ == "__main__":
-    current_env_config = get_config() # getting the configuration of the current environment
+    current_env_config = (
+        get_config()
+    )  # getting the configuration of the current environment
 
     # Initialize shared database instance (called once at startup)
     DatabaseHelper.init_database(current_env_config.DATABASE_URI)
-    JwtHelper.load_jwt_secret(current_env_config.JWT_SECRET)  # Load JWT secret key at startup
+    JwtHelper.load_jwt_secret(
+        current_env_config.JWT_SECRET
+    )  # Load JWT secret key at startup
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -42,10 +56,14 @@ if __name__ == "__main__":
     app.register_blueprint(address_bp)
     app.register_blueprint(order_bp)
 
-    if app.config.get('current_env') == 'development':
+    if app.config.get("current_env") == "development":
         # if environment is development then show all the configuration values in the console
         print(current_env_config.HOST)
         print(current_env_config.PORT)
         print(current_env_config.DEBUG)
 
-    app.run(debug=current_env_config.DEBUG, host=current_env_config.HOST, port=current_env_config.PORT)
+    app.run(
+        debug=current_env_config.DEBUG,
+        host=current_env_config.HOST,
+        port=current_env_config.PORT,
+    )

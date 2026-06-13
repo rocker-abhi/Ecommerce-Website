@@ -1,4 +1,4 @@
-﻿alembic==1.18.4
+alembic==1.18.4
 blinker==1.9.0
 click==8.4.1
 colorama==0.4.6
@@ -20,3 +20,4 @@ SQLAlchemy==2.0.50
 typing_extensions==4.15.0
 tzdata==2026.2
 Werkzeug==3.1.8
+flask-limiter>=3.0.0

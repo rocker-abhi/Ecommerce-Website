@@ -1,4 +1,11 @@
-from flask import g, jsonify, make_response, request
+"""
+Address API Endpoints.
+
+Handles retrieval, creation, modification, and deletion of user addresses.
+All endpoints require JWT authentication and are rate-limited to 3 requests per second.
+"""
+
+from flask import g, jsonify, make_response, request, Blueprint
 from flask.views import MethodView
 from app.middleware.jwt_middleware import jwt_required
 from app.models.addresses import AddressModel
@@ -7,9 +14,20 @@ from app.validators.address_validator import (
     AddressListResponseSchema,
     AddressDeleteResponseSchema,
 )
+from app.utils.limiter import limiter
+
+# Define Address blueprint
+address_bp = Blueprint("address", __name__, url_prefix="/address")
+
 
 class AddressAPI(MethodView):
+    """
+    Class-based view for handling user addresses.
+    Provides GET (list & detail), POST, PUT, and DELETE methods.
+    """
+
     @jwt_required
+    @limiter.limit("3 per second")
     def get(self, address_id=None):
         user_id = g.user_id
         if address_id:
@@ -64,6 +82,7 @@ class AddressAPI(MethodView):
         return make_response(jsonify(response_payload))
 
     @jwt_required
+    @limiter.limit("3 per second")
     def post(self):
         from app.validators.address_validator import AddressCreateSchema
         user_id = g.user_id
@@ -102,6 +121,7 @@ class AddressAPI(MethodView):
         return make_response(jsonify(response_payload), 201)
 
     @jwt_required
+    @limiter.limit("3 per second")
     def put(self, address_id):
         from app.validators.address_validator import AddressUpdateSchema
         user_id = g.user_id
@@ -154,6 +174,7 @@ class AddressAPI(MethodView):
 
 
     @jwt_required
+    @limiter.limit("3 per second")
     def delete(self, address_id):
         user_id = g.user_id
         address = g.db.query(AddressModel).filter(
@@ -177,4 +198,18 @@ class AddressAPI(MethodView):
             "message": "Address deleted successfully"
         })
         return make_response(jsonify(response_payload))
+
+
+# Registering View to the Blueprint
+address_bp.add_url_rule(
+    "",
+    view_func=AddressAPI.as_view("address_list"),
+    methods=["GET", "POST"],
+)
+address_bp.add_url_rule(
+    "/<uuid:address_id>",
+    view_func=AddressAPI.as_view("address_detail"),
+    methods=["GET", "PUT", "DELETE"],
+)
+
 

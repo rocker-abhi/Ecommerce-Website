@@ -6,7 +6,6 @@ ENV/
 .env
 
 # Environment Configuration Files (Sensitive Data)
-.env.dev
 .env.prod
 .env.stage
 .env.local

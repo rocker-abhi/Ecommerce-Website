@@ -1,9 +1,9 @@
-# importing library
 import logging
 
-from flask import current_app, g, jsonify, make_response, request
+from flask import current_app, g, jsonify, make_response, request, Blueprint
 
 from app.middleware.jwt_middleware import jwt_required
+from app.utils.limiter import limiter
 from app.services.authService import AuthService
 from app.validators.create_user_validator import (
     RequestResponseCreateUserSchema,
@@ -21,7 +21,12 @@ logger = logging.getLogger(__name__)
 
 auth_service = AuthService()
 
+# Define Auth blueprint
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+
+
+@limiter.limit("3 per second")
 def login():
 
     logger.debug(f"request id: {getattr(g, 'request_id', '-')}")
@@ -46,6 +51,7 @@ def login():
     return response
 
 
+@limiter.limit("3 per second")
 def create_user():
     schema = RequestResponseCreateUserSchema()
     data = schema.load(request.get_json())
@@ -71,6 +77,7 @@ def create_user():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def logout():
     schema = RequestLogoutSchema()
     data = schema.load(request.get_json())
@@ -87,6 +94,7 @@ def logout():
     return response
 
 
+@limiter.limit("3 per second")
 def refresh_token():
     schema = RequestRefreshTokenSchema()
     data = schema.load(request.get_json())
@@ -108,6 +116,7 @@ def refresh_token():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def auth_me():
     RequestMeSchema().load(request.get_json(silent=True) or {})
     user_id = g.user_id
@@ -124,6 +133,7 @@ def auth_me():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def update_profile():
     from app.validators.user_management_validator import UpdateProfileRequestSchema, UpdateProfileResponseSchema
     user_id = g.user_id
@@ -163,6 +173,7 @@ def update_profile():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def reset_password():
     from app.validators.user_management_validator import ResetPasswordRequestSchema, ResetPasswordResponseSchema
     user_id = g.user_id
@@ -183,6 +194,7 @@ def reset_password():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def list_users():
     from app.validators.user_management_validator import ListUsersQuerySchema, ListUsersResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
@@ -235,6 +247,7 @@ def list_users():
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def toggle_user_status(user_id):
     from app.validators.user_management_validator import ToggleUserStatusRequestSchema, ToggleUserStatusResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
@@ -278,6 +291,7 @@ def toggle_user_status(user_id):
 
 
 @jwt_required
+@limiter.limit("3 per second")
 def delete_user(user_id):
     from app.validators.user_management_validator import DeleteUserResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
@@ -300,5 +314,19 @@ def delete_user(user_id):
         "message": "User deleted successfully"
     })
     return make_response(jsonify(response_payload))
+
+
+# Registering Blueprint rules
+auth_bp.add_url_rule("/login", view_func=login, methods=["POST"])
+auth_bp.add_url_rule("/register", view_func=create_user, methods=["POST"])
+auth_bp.add_url_rule("/logout", view_func=logout, methods=["POST"])
+auth_bp.add_url_rule("/refresh", view_func=refresh_token, methods=["POST"])
+auth_bp.add_url_rule("/me", view_func=auth_me, methods=["GET"])
+auth_bp.add_url_rule("/me", view_func=update_profile, methods=["PUT"])
+auth_bp.add_url_rule("/reset-password", view_func=reset_password, methods=["POST"])
+auth_bp.add_url_rule("/users", view_func=list_users, methods=["GET"])
+auth_bp.add_url_rule("/users/<uuid:user_id>", view_func=toggle_user_status, methods=["PUT"])
+auth_bp.add_url_rule("/users/<uuid:user_id>", view_func=delete_user, methods=["DELETE"])
+
 
 
