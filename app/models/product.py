@@ -46,10 +46,6 @@ class ProductModel(BaseModel):
         "UserModel", back_populates="products"
     )
 
-    cart_items: Mapped[List["CartItemModel"]] = relationship(
-        "CartItemModel", back_populates="product", cascade="all, delete-orphan"
-    )
-
     order_items: Mapped[List["OrderItemModel"]] = relationship(
         "OrderItemModel", back_populates="product", cascade="all, delete-orphan"
     )

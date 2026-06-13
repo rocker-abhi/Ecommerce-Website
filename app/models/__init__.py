@@ -2,7 +2,6 @@
 from .addresses import AddressModel
 from .base import BaseModel
 from .cart import CartModel
-from .cart_item import CartItemModel
 from .category import CategoryModel
 from .subcategory import SubCategoryModel
 from .group import GroupModel, group_permissions, user_groups
@@ -30,7 +29,6 @@ __all__ = [
     "SubCategoryModel",
     "ProductModel",
     "CartModel",
-    "CartItemModel",
     "WishlistModel",
     "WishlistItemModel",
     "ReviewModel",

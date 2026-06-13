@@ -1,6 +1,5 @@
 import uuid
-from typing import List
-from sqlalchemy import ForeignKey, Uuid
+from sqlalchemy import ForeignKey, Uuid, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -16,11 +15,10 @@ class CartModel(BaseModel):
         unique=True
     )
 
+    items: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
     # Relationships
     user: Mapped["UserModel"] = relationship(
         "UserModel", back_populates="cart"
     )
 
-    cart_items: Mapped[List["CartItemModel"]] = relationship(
-        "CartItemModel", back_populates="cart", cascade="all, delete-orphan"
-    )
