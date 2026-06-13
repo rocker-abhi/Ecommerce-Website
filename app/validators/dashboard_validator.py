@@ -12,6 +12,7 @@ class HomepageDashboardQuerySchema(Schema):
             min=1, max=100, error="Limit must be between 1 and 100."
         ),
     )
+    search = fields.Str(load_default="")
 
 
 class HomepageDashboardResponseSchema(Schema):
