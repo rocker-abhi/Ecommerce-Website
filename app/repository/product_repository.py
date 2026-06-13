@@ -266,3 +266,88 @@ class ProductRepository:
                 }
             )
         return serialized
+
+    def get_all_products_paginated(self, page=1, limit=50):
+        """Retrieves all products ordered by created_at descending with pagination, converting local upload images to base64."""
+        from sqlalchemy import select, desc, func
+        from sqlalchemy.orm import joinedload
+        import math
+
+        # Input sanitization
+        try:
+            page = int(page)
+            if page < 1:
+                page = 1
+        except (ValueError, TypeError):
+            page = 1
+
+        try:
+            limit = int(limit)
+            if limit < 1:
+                limit = 50
+        except (ValueError, TypeError):
+            limit = 50
+
+        offset = (page - 1) * limit
+
+        # Get total product count
+        total_stmt = select(func.count(ProductModel.id))
+        total_count = g.db.execute(total_stmt).scalar()
+
+        # Query paginated products
+        stmt = (
+            select(ProductModel)
+            .options(
+                joinedload(ProductModel.category),
+                joinedload(ProductModel.subcategory)
+            )
+            .order_by(desc(ProductModel.created_at))
+            .limit(limit)
+            .offset(offset)
+        )
+        results = g.db.execute(stmt).scalars().all()
+
+        serialized = []
+        for p in results:
+            image_url = p.image_url
+            base64_image = image_url
+            if image_url and image_url.startswith("/uploads/"):
+                try:
+                    relative_path = image_url.replace("/uploads/", "")
+                    abs_path = FileHandler.get_file_path(relative_path)
+                    
+                    if os.path.exists(abs_path):
+                        ext = abs_path.split(".")[-1].lower()
+                        mime_type = f"image/{ext}"
+                        if ext in ("jpg", "jpeg", "png", "webp"):
+                            mime_type = f"image/{ext}"
+                        
+                        with open(abs_path, "rb") as image_file:
+                            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+                            base64_image = f"data:{mime_type};base64,{encoded_string}"
+                except Exception:
+                    pass
+
+            serialized.append(
+                {
+                    "id": str(p.id),
+                    "name": p.name,
+                    "description": p.description,
+                    "price": float(p.price),
+                    "image_url": base64_image,
+                    "category": p.category.name if p.category else None,
+                    "subcategory": p.subcategory.name if p.subcategory else None,
+                    "sku": p.sku,
+                    "stock": p.stock,
+                }
+            )
+
+        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
+
+        return {
+            "products": serialized,
+            "total_count": total_count,
+            "page": page,
+            "limit": limit,
+            "total_pages": total_pages
+        }

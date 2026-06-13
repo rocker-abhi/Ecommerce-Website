@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token
-from app.routes.dashboardApi import SellerDashboard
+from app.routes.dashboardApi import SellerDashboard, HomepageDashboard
 from app.routes.product_api import ProductView
 
 # creating Blueprint for the current File
@@ -22,6 +22,9 @@ auth_bp.add_url_rule("/me", view_func=auth_me, methods=["GET"])
 # adding dashboard route
 dashboard_bp.add_url_rule(
     "/seller", view_func=SellerDashboard.as_view("seller_dashboard"), methods=["GET"]
+)
+dashboard_bp.add_url_rule(
+    "/", view_func=HomepageDashboard.as_view("homepage_dashboard"), methods=["GET"]
 )
 
 

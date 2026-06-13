@@ -149,4 +149,3 @@ class ProductView(MethodView):
             "data": product_data,
         }
         return make_response(jsonify(response_payload))
-

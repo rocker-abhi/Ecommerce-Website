@@ -86,6 +86,13 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [editFormError, setEditFormError] = useState<string | null>(null);
   const [editFormSuccess, setEditFormSuccess] = useState<string | null>(null);
 
+  // Buyer storefront products pagination states
+  const [buyerPage, setBuyerPage] = useState(1);
+  const [buyerTotalPages, setBuyerTotalPages] = useState(1);
+  const [buyerTotalCount, setBuyerTotalCount] = useState(0);
+  const [loadingStorefront, setLoadingStorefront] = useState(false);
+  const [storefrontError, setStorefrontError] = useState<string | null>(null);
+
   const handleEditImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -267,6 +274,60 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   }, [isAdmin, isSeller]);
 
+  const fetchStorefrontProducts = async (page = 1, limit = 50) => {
+    setLoadingStorefront(true);
+    setStorefrontError(null);
+    try {
+      const response = await apiClient.get(`/dashboard/?page=${page}&limit=${limit}`);
+      if (response.data && response.data.success) {
+        const payload = response.data.data;
+        const rawProducts = payload.products || [];
+        const mappedProducts = rawProducts.map((item: any) => {
+          return {
+            id: item.id,
+            name: item.name || 'Unnamed Product',
+            price: parseFloat(item.price) || 0.0,
+            category: item.category || 'Electronics',
+            subcategory: item.subcategory || '',
+            rating: parseFloat(item.rating) || 5.0,
+            image: item.image_url || item.image || 'https://picsum.photos/id/120/400/300',
+            description: item.description || '',
+            sku: item.sku || '',
+            stock: item.stock !== undefined ? item.stock : 50
+          };
+        });
+
+        // Filter out locally deleted products and apply edit overrides
+        const savedDeleted = localStorage.getItem('deleted_product_ids');
+        const deletedIds: (string | number)[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+        
+        const savedEdited = localStorage.getItem('edited_products');
+        const editedProducts: Record<string | number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+
+        const filteredMappedProducts = mappedProducts
+          .filter((p: Product) => !deletedIds.includes(p.id))
+          .map((p: Product) => {
+            if (editedProducts[p.id]) {
+              return { ...p, ...editedProducts[p.id] };
+            }
+            return p;
+          });
+
+        setProducts(filteredMappedProducts);
+        setBuyerPage(payload.page || page);
+        setBuyerTotalPages(payload.total_pages || 1);
+        setBuyerTotalCount(payload.total_count || 0);
+      } else {
+        setStorefrontError(response.data?.message || 'Failed to load products');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'An error occurred while fetching storefront products';
+      setStorefrontError(msg);
+    } finally {
+      setLoadingStorefront(false);
+    }
+  };
+
   const fetchMetrics = async () => {
     setLoadingMetrics(true);
     setMetricsError(null);
@@ -362,6 +423,12 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   }, [activeTab, isSeller]);
 
+  useEffect(() => {
+    if (activeTab === 'buyer') {
+      fetchStorefrontProducts(buyerPage);
+    }
+  }, [activeTab, buyerPage]);
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -401,11 +468,11 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     });
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: string | number) => {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const updateQuantity = (productId: number, change: number) => {
+  const updateQuantity = (productId: string | number, change: number) => {
     setCart((prev) =>
       prev
         .map((item) => {
@@ -1281,7 +1348,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
               </thead>
               <tbody>
                 {sellerProducts.map((product) => {
-                  const sku = product.sku || `SKU-EL-${product.id * 13 + 104}`;
+                  const sku = product.sku || `SKU-EL-${typeof product.id === 'number' ? product.id * 13 + 104 : product.id.toString().slice(0, 6)}`;
                   const stock = product.stock !== undefined ? product.stock : 25;
                   
                   let stockBadge = 'text-green-700 font-bold bg-green-50 border border-green-100';
@@ -1646,7 +1713,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
         {/* Sorting and result summary */}
         <div className="bg-white border border-zinc-200 p-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-sm text-left">
           <div className="text-sm font-semibold text-zinc-700">
-            Showing {filteredProducts.length} results for category: <span className="text-[#007185] font-bold">{selectedCategory}</span>
+            Showing {filteredProducts.length} {buyerTotalCount > 0 && `of ${buyerTotalCount}`} results for category: <span className="text-[#007185] font-bold">{selectedCategory}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -1665,7 +1732,16 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
         </div>
 
         {/* Product Cards Container Grid */}
-        {filteredProducts.length === 0 ? (
+        {loadingStorefront ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white border border-zinc-200 rounded-sm shadow-xs">
+            <div className="w-10 h-10 border-4 border-[#febd69] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-zinc-500 text-xs mt-3 font-semibold">Loading storefront products...</p>
+          </div>
+        ) : storefrontError ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-sm p-4 text-center">
+            {storefrontError}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-zinc-200 rounded-sm">
             <svg className="w-16 h-16 text-zinc-400 mb-3 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1674,113 +1750,146 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
             <p className="text-zinc-500 text-xs mt-1">Try updating search queries or resetting category tags.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((p) => {
-              const formattedPrice = formatAmazonPrice(p.price);
-              return (
-                <div
-                  key={p.id}
-                  className="bg-white border border-zinc-200 rounded-sm p-4 flex flex-col justify-between hover:shadow-lg transition-all duration-200 relative text-left"
-                >
-                  <div>
-                    {/* Category Label */}
-                    <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5 flex items-center gap-1 flex-wrap">
-                      <span>{p.category}</span>
-                      {p.subcategory && (
-                        <>
-                          <span className="text-zinc-300 font-normal">›</span>
-                          <span className="text-zinc-400 font-semibold">{p.subcategory}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Image */}
-                    <div 
-                      className="h-44 w-full bg-zinc-50 flex items-center justify-center overflow-hidden mb-3.5 cursor-pointer rounded-sm"
-                      onClick={() => setSelectedProduct(p)}
-                    >
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="max-h-full max-w-full object-contain hover:scale-103 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-
-                    {/* Product Title */}
-                    <h4 
-                      className="text-sm font-medium text-zinc-950 line-clamp-2 leading-relaxed hover:text-orange-700 cursor-pointer"
-                      onClick={() => setSelectedProduct(p)}
-                    >
-                      {p.name}
-                    </h4>
-
-                    {/* Ratings Section */}
-                    <div className="flex items-center gap-1 mt-2.5">
-                      <div className="flex text-amber-500">
-                        {Array.from({ length: 5 }).map((_, idx) => (
-                          <svg
-                            key={idx}
-                            className={`w-3.5 h-3.5 ${
-                              idx < Math.floor(p.rating) ? 'fill-current' : 'stroke-current text-zinc-300 fill-none'
-                            }`}
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                            />
-                          </svg>
-                        ))}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredProducts.map((p) => {
+                const formattedPrice = formatAmazonPrice(p.price);
+                return (
+                  <div
+                    key={p.id}
+                    className="bg-white border border-zinc-200 rounded-sm p-4 flex flex-col justify-between hover:shadow-lg transition-all duration-200 relative text-left"
+                  >
+                    <div>
+                      {/* Category Label */}
+                      <div className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5 flex items-center gap-1 flex-wrap">
+                        <span>{p.category}</span>
+                        {p.subcategory && (
+                          <>
+                            <span className="text-zinc-300 font-normal">›</span>
+                            <span className="text-zinc-400 font-semibold">{p.subcategory}</span>
+                          </>
+                        )}
                       </div>
-                      <span className="text-xs text-[#007185] hover:text-orange-700 cursor-pointer">{p.rating}</span>
-                    </div>
-
-                    {/* Prime Indicator */}
-                    <div className="flex items-center gap-1 mt-2">
-                      <span className="text-[#00a8e1] font-bold text-[10px] italic flex items-center">
-                        ✓ prime
-                      </span>
-                      <span className="text-[10px] text-zinc-600 font-medium">FREE Delivery</span>
-                    </div>
-
-                  </div>
-
-                  {/* Pricing and Action */}
-                  <div className="mt-4">
-                    {/* Price Format: $ Dollars Cents */}
-                    <div className="flex items-start text-zinc-900 mb-3.5">
-                      <span className="text-[11px] font-bold mt-1">$</span>
-                      <span className="text-2xl font-bold leading-none">{formattedPrice.dollars}</span>
-                      <span className="text-[11px] font-bold mt-1">{formattedPrice.cents}</span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => addToCart(p)}
-                        className="flex-1 amazon-btn-primary py-1.5 px-3 text-xs font-normal shadow-sm"
+                      
+                      {/* Image */}
+                      <div 
+                        className="h-44 w-full bg-zinc-50 flex items-center justify-center overflow-hidden mb-3.5 cursor-pointer rounded-sm"
+                        onClick={() => setSelectedProduct(p)}
                       >
-                        Add to Cart
-                      </button>
-                      {(isSeller || isAdmin) && (
-                        <button
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="px-2.5 py-1.5 text-xs font-bold text-red-600 hover:text-white border border-red-200 hover:bg-red-600 hover:border-red-600 rounded shadow-sm transition-all cursor-pointer active:scale-95"
-                          title="Delete product listing"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="max-h-full max-w-full object-contain hover:scale-103 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
 
-                </div>
-              );
-            })}
-          </div>
+                      {/* Product Title */}
+                      <h4 
+                        className="text-sm font-medium text-zinc-950 line-clamp-2 leading-relaxed hover:text-orange-700 cursor-pointer"
+                        onClick={() => setSelectedProduct(p)}
+                      >
+                        {p.name}
+                      </h4>
+
+                      {/* Ratings Section */}
+                      <div className="flex items-center gap-1 mt-2.5">
+                        <div className="flex text-amber-500">
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <svg
+                              key={idx}
+                              className={`w-3.5 h-3.5 ${
+                                idx < Math.floor(p.rating) ? 'fill-current' : 'stroke-current text-zinc-300 fill-none'
+                              }`}
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                              />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-xs text-[#007185] hover:text-orange-700 cursor-pointer">{p.rating}</span>
+                      </div>
+
+                      {/* Prime Indicator */}
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className="text-[#00a8e1] font-bold text-[10px] italic flex items-center">
+                          ✓ prime
+                        </span>
+                        <span className="text-[10px] text-zinc-600 font-medium">FREE Delivery</span>
+                      </div>
+
+                    </div>
+
+                    {/* Pricing and Action */}
+                    <div className="mt-4">
+                      {/* Price Format: $ Dollars Cents */}
+                      <div className="flex items-start text-zinc-900 mb-3.5">
+                        <span className="text-[11px] font-bold mt-1">$</span>
+                        <span className="text-2xl font-bold leading-none">{formattedPrice.dollars}</span>
+                        <span className="text-[11px] font-bold mt-1">{formattedPrice.cents}</span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => addToCart(p)}
+                          className="flex-1 amazon-btn-primary py-1.5 px-3 text-xs font-normal shadow-sm"
+                        >
+                          Add to Cart
+                        </button>
+                        {(isSeller || isAdmin) && (
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="px-2.5 py-1.5 text-xs font-bold text-red-600 hover:text-white border border-red-200 hover:bg-red-600 hover:border-red-600 rounded shadow-sm transition-all cursor-pointer active:scale-95"
+                            title="Delete product listing"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination controls for buyer view */}
+            {buyerTotalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-8 pb-4">
+                <button
+                  onClick={() => setBuyerPage(prev => Math.max(prev - 1, 1))}
+                  disabled={buyerPage === 1}
+                  className={`px-4 py-2 border rounded-md text-xs font-semibold shadow-xs transition-all ${
+                    buyerPage === 1
+                      ? 'bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed'
+                      : 'bg-white hover:bg-zinc-50 border-zinc-300 text-zinc-700 cursor-pointer active:scale-97'
+                  }`}
+                >
+                  « Previous
+                </button>
+                <span className="text-xs font-bold text-zinc-700">
+                  Page {buyerPage} of {buyerTotalPages}
+                </span>
+                <button
+                  onClick={() => setBuyerPage(prev => Math.min(prev + 1, buyerTotalPages))}
+                  disabled={buyerPage === buyerTotalPages}
+                  className={`px-4 py-2 border rounded-md text-xs font-semibold shadow-xs transition-all ${
+                    buyerPage === buyerTotalPages
+                      ? 'bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed'
+                      : 'bg-white hover:bg-zinc-50 border-zinc-300 text-zinc-700 cursor-pointer active:scale-97'
+                  }`}
+                >
+                  Next »
+                </button>
+              </div>
+            )}
+          </>
         )}
 
       </div>

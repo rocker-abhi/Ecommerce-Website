@@ -10,3 +10,6 @@ class DashboardService:
             self.product_repository.get_products_by_seller_id(user_id)
         )
         return product_data
+
+    def get_homepage_products(self, page=1, limit=50):
+        return self.product_repository.get_all_products_paginated(page, limit)
