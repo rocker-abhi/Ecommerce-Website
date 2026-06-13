@@ -63,7 +63,7 @@ const SALES_TRENDS: Record<'weekly' | 'monthly' | 'quarterly' | 'yearly', SalesD
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) => {
   const { showToast } = useToast();
-  const [activeView, setActiveView] = useState<'dashboard' | 'users'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'users' | 'products'>('dashboard');
   const [metrics, setMetrics] = useState<any>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -72,6 +72,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [userPage, setUserPage] = useState(1);
+  const [userTotalPages, setUserTotalPages] = useState(1);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
+
+  // Products management state
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState('');
+  const [productPage, setProductPage] = useState(1);
+  const [productTotalPages, setProductTotalPages] = useState(1);
+  const [totalProductsCount, setTotalProductsCount] = useState(0);
 
   // Chart state
   const [chartRange, setChartRange] = useState<'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly');
@@ -139,13 +152,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1, search = '') => {
     setLoadingUsers(true);
     setUsersError(null);
     try {
-      const response = await apiClient.get('/auth/users');
+      const response = await apiClient.get(`/auth/users?page=${page}&limit=50&search=${encodeURIComponent(search)}`);
       if (response.data && response.data.success) {
-        setUsers(response.data.data || []);
+        setUsers(response.data.data.users || []);
+        setUserTotalPages(response.data.data.pages || 1);
+        setTotalUsersCount(response.data.data.total || 0);
       } else {
         setUsersError(response.data?.message || 'Failed to load registered users');
       }
@@ -153,6 +168,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
       setUsersError(err.response?.data?.message || err.message || 'Error occurred while loading registered users');
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const fetchProducts = async (page = 1, search = '') => {
+    setLoadingProducts(true);
+    setProductsError(null);
+    try {
+      const response = await apiClient.get(`/dashboard/?page=${page}&limit=50&search=${encodeURIComponent(search)}`);
+      if (response.data && response.data.success) {
+        setProducts(response.data.data.products || []);
+        setProductTotalPages(response.data.data.total_pages || 1);
+        setTotalProductsCount(response.data.data.total_count || 0);
+      } else {
+        setProductsError(response.data?.message || 'Failed to load products catalog');
+      }
+    } catch (err: any) {
+      setProductsError(err.response?.data?.message || err.message || 'Error occurred while loading products catalog');
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this product?")) return;
+    try {
+      const response = await apiClient.delete(`/product/${productId}`);
+      if (response.data && response.data.success) {
+        setProducts(prev => prev.filter(p => p.id !== productId));
+        setTotalProductsCount(prev => Math.max(0, prev - 1));
+        showToast('success', 'Product Deleted', 'The product has been deleted permanently.');
+      } else {
+        showToast('error', 'Action Failed', response.data?.message || 'Failed to delete product.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Delete Error', err.response?.data?.message || 'Failed to delete product');
     }
   };
 
@@ -165,9 +215,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
 
   useEffect(() => {
     if (isAdmin && activeView === 'users') {
-      fetchUsers();
+      fetchUsers(userPage, userSearch);
     }
-  }, [isAdmin, activeView]);
+  }, [isAdmin, activeView, userPage, userSearch]);
+
+  useEffect(() => {
+    if (isAdmin && activeView === 'products') {
+      fetchProducts(productPage, productSearch);
+    }
+  }, [isAdmin, activeView, productPage, productSearch]);
 
   if (!isAdmin) {
     return (
@@ -253,6 +309,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               User Accounts
+            </button>
+            <button
+              onClick={() => setActiveView('products')}
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-semibold transition-all cursor-pointer flex items-center gap-3 ${
+                activeView === 'products'
+                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 glow-accent'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Products Catalog
             </button>
           </nav>
         </div>
@@ -418,6 +487,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
               <p className="text-xs text-slate-400 mt-1">Manage, update profiles, toggle admin rights, and delete customer registrations.</p>
             </div>
 
+            {/* User Search Bar */}
+            <div className="relative max-w-md">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="w-5 h-5 text-slate-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Search users by name or email..."
+                value={userSearch}
+                onChange={(e) => {
+                  setUserSearch(e.target.value);
+                  setUserPage(1);
+                }}
+                className="glass-input pl-10"
+              />
+            </div>
+
             {loadingUsers && users.length === 0 ? (
               <div className="flex justify-center items-center py-20">
                 <svg className="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
@@ -436,7 +524,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
               <div className="glass-card-static overflow-hidden">
                 <div className="px-6 py-4 border-b border-white/5 bg-white/2 flex justify-between items-center">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Registrations logs</h3>
-                  <span className="badge badge-neutral">{users.length} accounts</span>
+                  <span className="badge badge-neutral">{totalUsersCount} accounts</span>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -492,6 +580,172 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Users Pagination Footer */}
+                <div className="px-6 py-4 border-t border-white/5 bg-white/2 flex justify-between items-center text-xs text-slate-400">
+                  <div>
+                    Showing page <span className="font-semibold text-slate-200">{userPage}</span> of <span className="font-semibold text-slate-200">{userTotalPages}</span> (<span className="font-semibold text-slate-200">{totalUsersCount}</span> users)
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={userPage <= 1 || loadingUsers}
+                      onClick={() => setUserPage(prev => Math.max(1, prev - 1))}
+                      className="btn-secondary !py-1.5 !px-4 text-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      disabled={userPage >= userTotalPages || loadingUsers}
+                      onClick={() => setUserPage(prev => Math.min(userTotalPages, prev + 1))}
+                      className="btn-secondary !py-1.5 !px-4 text-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Products Management View */}
+        {activeView === 'products' && (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h1 className="text-2xl font-extrabold text-gradient-blue tracking-tight">Products Catalog</h1>
+              <p className="text-xs text-slate-400 mt-1">Monitor stock inventory, view product details, and remove products from the catalog.</p>
+            </div>
+
+            {/* Product Search Bar */}
+            <div className="relative max-w-md">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="w-5 h-5 text-slate-450" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                placeholder="Search products by name, description, or SKU..."
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setProductPage(1);
+                }}
+                className="glass-input pl-10"
+              />
+            </div>
+
+            {loadingProducts && products.length === 0 ? (
+              <div className="flex justify-center items-center py-20">
+                <svg className="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              </div>
+            ) : productsError ? (
+              <div className="alert alert-error">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Products Load Error: {productsError}</span>
+              </div>
+            ) : (
+              <div className="glass-card-static overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/5 bg-white/2 flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Storefront Items</h3>
+                  <span className="badge badge-neutral">{totalProductsCount} products</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/5 bg-white/[0.01] text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <th className="p-4 pl-6">Product</th>
+                        <th className="p-4">SKU</th>
+                        <th className="p-4">Category</th>
+                        <th className="p-4">Price</th>
+                        <th className="p-4">Stock</th>
+                        <th className="p-4 pr-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm">
+                      {products.map(p => (
+                        <tr key={p.id} className="hover:bg-white/[0.01] transition-colors">
+                          <td className="p-4 pl-6">
+                            <div className="flex items-center gap-3">
+                              {p.image_url ? (
+                                <img
+                                  src={p.image_url}
+                                  alt={p.name}
+                                  className="w-10 h-10 object-cover rounded border border-white/15"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&fit=crop';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-slate-800 rounded flex items-center justify-center text-xs text-slate-500 border border-white/10 font-bold">
+                                  No Img
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-bold text-slate-200 max-w-[200px] truncate" title={p.name}>{p.name}</div>
+                                <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate max-w-[200px]" title={p.description}>{p.description}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 font-mono text-xs text-slate-350">{p.sku}</td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="badge badge-accent !text-[9px]">{p.category || 'Uncategorized'}</span>
+                              {p.subcategory && (
+                                <span className="text-[10px] text-slate-550 ml-1">{p.subcategory}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 font-semibold text-slate-200">
+                            ₹{p.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="p-4">
+                            <span className={`badge ${p.stock > 10 ? 'badge-success' : p.stock > 0 ? 'badge-warning' : 'badge-error'}`}>
+                              {p.stock} units
+                            </span>
+                          </td>
+                          <td className="p-4 pr-6 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="btn-danger !px-3 !py-1 text-xs"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Products Pagination Footer */}
+                <div className="px-6 py-4 border-t border-white/5 bg-white/2 flex justify-between items-center text-xs text-slate-400">
+                  <div>
+                    Showing page <span className="font-semibold text-slate-200">{productPage}</span> of <span className="font-semibold text-slate-200">{productTotalPages}</span> (<span className="font-semibold text-slate-200">{totalProductsCount}</span> products)
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={productPage <= 1 || loadingProducts}
+                      onClick={() => setProductPage(prev => Math.max(1, prev - 1))}
+                      className="btn-secondary !py-1.5 !px-4 text-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      disabled={productPage >= productTotalPages || loadingProducts}
+                      onClick={() => setProductPage(prev => Math.min(productTotalPages, prev + 1))}
+                      className="btn-secondary !py-1.5 !px-4 text-xs cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

@@ -37,8 +37,9 @@ class HomepageDashboard(MethodView):
         validated_args = query_schema.load(request.args)
         page = validated_args.get("page")
         limit = validated_args.get("limit")
+        search = validated_args.get("search", "")
 
-        products_data = dashboard_service.get_homepage_products(page=page, limit=limit)
+        products_data = dashboard_service.get_homepage_products(page=page, limit=limit, search=search)
         
         response_schema = HomepageDashboardResponseSchema()
         response_payload = response_schema.dump({

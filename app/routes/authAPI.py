@@ -184,13 +184,30 @@ def reset_password():
 
 @jwt_required
 def list_users():
-    from app.validators.user_management_validator import ListUsersResponseSchema
+    from app.validators.user_management_validator import ListUsersQuerySchema, ListUsersResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
     if not requesting_user or not requesting_user.is_admin:
         return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
 
+    query_schema = ListUsersQuerySchema()
+    query_params = query_schema.load(request.args)
+    page = query_params["page"]
+    limit = query_params["limit"]
+    search = query_params["search"]
+
     from app.models.user import UserModel
-    users = g.db.query(UserModel).all()
+    query = g.db.query(UserModel)
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (UserModel.name.ilike(search_filter)) | (UserModel.email.ilike(search_filter))
+        )
+
+    total = query.count()
+    offset = (page - 1) * limit
+    users = query.order_by(UserModel.name.asc()).offset(offset).limit(limit).all()
+
     serialized = []
     for u in users:
         serialized.append({
@@ -202,11 +219,17 @@ def list_users():
             "is_admin": u.is_admin,
             "userType": u.userType
         })
+
     response_schema = ListUsersResponseSchema()
     response_payload = response_schema.dump({
         "success": True,
         "message": "Users retrieved successfully",
-        "data": serialized
+        "data": {
+            "users": serialized,
+            "total": total,
+            "page": page,
+            "pages": (total + limit - 1) // limit if total > 0 else 1
+        }
     })
     return make_response(jsonify(response_payload))
 

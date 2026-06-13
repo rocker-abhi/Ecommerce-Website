@@ -11,5 +11,5 @@ class DashboardService:
         )
         return product_data
 
-    def get_homepage_products(self, page=1, limit=50):
-        return self.product_repository.get_all_products_paginated(page, limit)
+    def get_homepage_products(self, page=1, limit=50, search=""):
+        return self.product_repository.get_all_products_paginated(page, limit, search)

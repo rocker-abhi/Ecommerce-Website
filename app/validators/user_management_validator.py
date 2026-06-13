@@ -54,10 +54,24 @@ class UserDetailSchema(Schema):
     userType = fields.Str(required=True)
 
 
+class ListUsersQuerySchema(Schema):
+    page = fields.Int(required=False, load_default=1, validate=validate.Range(min=1))
+    limit = fields.Int(required=False, load_default=50, validate=validate.Range(min=1, max=100))
+    search = fields.Str(required=False, load_default="")
+
+
+class ListUsersDataSchema(Schema):
+    users = fields.List(fields.Nested(UserDetailSchema), required=True)
+    total = fields.Int(required=True)
+    page = fields.Int(required=True)
+    pages = fields.Int(required=True)
+
+
 class ListUsersResponseSchema(Schema):
     success = fields.Boolean(required=True)
     message = fields.Str(required=True)
-    data = fields.List(fields.Nested(UserDetailSchema), required=True)
+    data = fields.Nested(ListUsersDataSchema, required=True)
+
 
 
 class ToggleUserStatusRequestSchema(Schema):

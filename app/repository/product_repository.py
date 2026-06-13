@@ -268,9 +268,9 @@ class ProductRepository:
             )
         return serialized
 
-    def get_all_products_paginated(self, page=1, limit=50):
+    def get_all_products_paginated(self, page=1, limit=50, search=""):
         """Retrieves all products ordered by created_at descending with pagination, converting local upload images to base64."""
-        from sqlalchemy import select, desc, func
+        from sqlalchemy import select, desc, func, or_
         from sqlalchemy.orm import joinedload
         import math
 
@@ -293,6 +293,15 @@ class ProductRepository:
 
         # Get total product count
         total_stmt = select(func.count(ProductModel.id))
+        if search:
+            search_filter = f"%{search}%"
+            total_stmt = total_stmt.filter(
+                or_(
+                    ProductModel.name.ilike(search_filter),
+                    ProductModel.description.ilike(search_filter),
+                    ProductModel.sku.ilike(search_filter)
+                )
+            )
         total_count = g.db.execute(total_stmt).scalar()
 
         # Query paginated products
@@ -302,10 +311,17 @@ class ProductRepository:
                 joinedload(ProductModel.category),
                 joinedload(ProductModel.subcategory)
             )
-            .order_by(desc(ProductModel.created_at))
-            .limit(limit)
-            .offset(offset)
         )
+        if search:
+            search_filter = f"%{search}%"
+            stmt = stmt.filter(
+                or_(
+                    ProductModel.name.ilike(search_filter),
+                    ProductModel.description.ilike(search_filter),
+                    ProductModel.sku.ilike(search_filter)
+                )
+            )
+        stmt = stmt.order_by(desc(ProductModel.created_at)).limit(limit).offset(offset)
         results = g.db.execute(stmt).scalars().all()
 
         serialized = []

@@ -168,7 +168,7 @@ function App() {
           boxShadow: '0 0 40px rgba(99,102,241,0.4)',
           animation: 'pulse-glow 2s ease-in-out infinite'
         }}>
-          🛍️
+          🚀
         </div>
         <div style={{
           display: 'flex',
@@ -184,7 +184,7 @@ function App() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            ShopVerse
+            Applo
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{

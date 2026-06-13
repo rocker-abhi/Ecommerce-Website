@@ -90,13 +90,13 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onToggleView }) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 26, margin: '0 auto 16px',
             boxShadow: '0 0 40px rgba(99,102,241,0.35)'
-          }}>🛍️</div>
+          }}>🚀</div>
           <h1 style={{
             fontFamily: "'Sora', sans-serif",
             fontSize: 28, fontWeight: 800, margin: '0 0 6px',
             background: 'linear-gradient(135deg, #818cf8, #c084fc)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-          }}>ShopVerse</h1>
+          }}>Applo</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
             Sign in to your account
           </p>
