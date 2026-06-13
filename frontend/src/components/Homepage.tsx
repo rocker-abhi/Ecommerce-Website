@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import apiClient from '../services/api';
 
 interface Product {
-  id: number;
+  id: string | number;
   name: string;
   price: number;
   category: 'Electronics' | 'Apparel' | 'Home' | 'Fitness' | 'Accessories';
@@ -129,7 +129,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   }, []);
 
   // Local state for deleted product IDs to persist deletion on frontend reload
-  const [deletedProductIds, setDeletedProductIds] = useState<number[]>(() => {
+  const [deletedProductIds, setDeletedProductIds] = useState<(string | number)[]>(() => {
     try {
       const saved = localStorage.getItem('deleted_product_ids');
       return saved ? JSON.parse(saved) : [];
@@ -138,8 +138,11 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   });
 
-  const handleDeleteProduct = (productId: number) => {
-    if (window.confirm('Are you sure you want to delete this product listing?')) {
+  const handleDeleteProduct = async (productId: string | number) => {
+    try {
+      await apiClient.delete(`/product/${productId}`);
+      
+      // Also maintain client-side local overrides for robust resilience
       const updatedDeletedIds = [...deletedProductIds, productId];
       setDeletedProductIds(updatedDeletedIds);
       localStorage.setItem('deleted_product_ids', JSON.stringify(updatedDeletedIds));
@@ -150,8 +153,12 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       if (selectedProduct && selectedProduct.id === productId) {
         setSelectedProduct(null);
       }
+    } catch (err: any) {
+      console.error('Failed to delete product from database:', err);
+      alert(err?.response?.data?.message || 'Failed to delete product. Please try again.');
     }
   };
+
 
   const handleEditClick = (product: Product) => {
     setEditingProduct(product);
@@ -204,7 +211,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     // Save update override in localStorage
     try {
       const savedEdited = localStorage.getItem('edited_products');
-      const editedProducts: Record<number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+      const editedProducts: Record<string | number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
       editedProducts[editingProduct.id] = updatedProduct;
       localStorage.setItem('edited_products', JSON.stringify(editedProducts));
     } catch (err) {
@@ -282,10 +289,10 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
         });
         // Filter out locally deleted products and apply edit overrides
         const savedDeleted = localStorage.getItem('deleted_product_ids');
-        const deletedIds: number[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+        const deletedIds: (string | number)[] = savedDeleted ? JSON.parse(savedDeleted) : [];
         
         const savedEdited = localStorage.getItem('edited_products');
-        const editedProducts: Record<number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+        const editedProducts: Record<string | number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
 
         const filteredMappedProducts = mappedProducts
           .filter((p: Product) => !deletedIds.includes(p.id))
