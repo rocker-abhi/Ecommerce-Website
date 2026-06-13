@@ -176,7 +176,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEditProductSubmit = (e: React.FormEvent) => {
+  const handleEditProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEditFormError(null);
     setEditFormSuccess(null);
@@ -194,36 +194,56 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       return;
     }
 
-    const updatedProduct: Product = {
-      ...editingProduct,
-      name: editProdName.trim(),
-      price: parsedPrice,
-      category: editProdCategory as Product['category'],
-      subcategory: editProdSubcategory,
-      image: editProdImage,
-      description: editProdDesc.trim()
-    };
-
-    // Update in local state
-    setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
-    setSellerProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
-
-    // Save update override in localStorage
     try {
-      const savedEdited = localStorage.getItem('edited_products');
-      const editedProducts: Record<string | number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
-      editedProducts[editingProduct.id] = updatedProduct;
-      localStorage.setItem('edited_products', JSON.stringify(editedProducts));
-    } catch (err) {
-      console.error('Failed to save edited product to localStorage:', err);
+      const response = await apiClient.put(`/product/${editingProduct.id}`, {
+        name: editProdName.trim(),
+        price: parsedPrice,
+        description: editProdDesc.trim(),
+        category: editProdCategory,
+        subcategory: editProdSubcategory,
+        image_url: editProdImage
+      });
+
+      const resData = response.data?.data || response.data || {};
+      const updatedProduct: Product = {
+        ...editingProduct,
+        name: resData.name || editProdName.trim(),
+        price: resData.price !== undefined ? parseFloat(resData.price) : parsedPrice,
+        category: (resData.category || editProdCategory) as Product['category'],
+        subcategory: resData.subcategory || editProdSubcategory,
+        image: resData.image_url || resData.image || editProdImage,
+        description: resData.description || editProdDesc.trim(),
+        sku: resData.sku || editingProduct.sku,
+        stock: resData.stock !== undefined ? resData.stock : editingProduct.stock
+      };
+
+      // Update in local state
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      setSellerProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+
+      // Save update override in localStorage
+      try {
+        const savedEdited = localStorage.getItem('edited_products');
+        const editedProducts: Record<string | number, Product> = savedEdited ? JSON.parse(savedEdited) : {};
+        editedProducts[editingProduct.id] = updatedProduct;
+        localStorage.setItem('edited_products', JSON.stringify(editedProducts));
+      } catch (err) {
+        console.error('Failed to save edited product to localStorage:', err);
+      }
+
+      setEditFormSuccess('Product listing updated successfully!');
+      
+      // Refresh the seller data to sync completely
+      fetchSellerData();
+
+      setTimeout(() => {
+        setEditFormSuccess(null);
+        setEditingProduct(null);
+      }, 1500);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'An error occurred while updating the product';
+      setEditFormError(msg);
     }
-
-    setEditFormSuccess('Product listing updated successfully!');
-
-    setTimeout(() => {
-      setEditFormSuccess(null);
-      setEditingProduct(null);
-    }, 1500);
   };
 
   // Set default view on load
