@@ -8,6 +8,7 @@ from app.validators.dashboard_validator import (
     HomepageDashboardQuerySchema,
     HomepageDashboardResponseSchema,
     SellerDashboardResponseSchema,
+    AdminDashboardResponseSchema,
 )
 
 dashboard_service = DashboardService()
@@ -30,6 +31,7 @@ class SellerDashboard(MethodView):
 
 
 class HomepageDashboard(MethodView):
+    @jwt_required
     def get(self):
         query_schema = HomepageDashboardQuerySchema()
         validated_args = query_schema.load(request.args)
@@ -119,7 +121,8 @@ class AdminDashboard(MethodView):
         
         yearly_data = [{"label": str(yr), "value": amt} for yr, amt in sorted(yearly_map.items())]
 
-        response_payload = {
+        response_schema = AdminDashboardResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Admin metrics retrieved successfully",
             "data": {
@@ -134,6 +137,6 @@ class AdminDashboard(MethodView):
                     "yearly": yearly_data
                 }
             }
-        }
+        })
         return make_response(jsonify(response_payload))
 

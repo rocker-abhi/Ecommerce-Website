@@ -125,8 +125,10 @@ def auth_me():
 
 @jwt_required
 def update_profile():
+    from app.validators.user_management_validator import UpdateProfileRequestSchema, UpdateProfileResponseSchema
     user_id = g.user_id
-    data = request.get_json() or {}
+    schema = UpdateProfileRequestSchema()
+    data = schema.load(request.get_json() or {})
     name = data.get("name")
     email = data.get("email")
     age = data.get("age")
@@ -144,7 +146,8 @@ def update_profile():
 
     g.db.commit()
     
-    response_payload = {
+    response_schema = UpdateProfileResponseSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Profile updated successfully",
         "data": {
@@ -155,34 +158,33 @@ def update_profile():
             "profile_picture_url": user.profile_picture_url,
             "userType": user.userType
         }
-    }
+    })
     return make_response(jsonify(response_payload))
 
 
 @jwt_required
 def reset_password():
+    from app.validators.user_management_validator import ResetPasswordRequestSchema, ResetPasswordResponseSchema
     user_id = g.user_id
-    data = request.get_json() or {}
+    schema = ResetPasswordRequestSchema()
+    data = schema.load(request.get_json() or {})
     password = data.get("password")
-    confirm_password = data.get("confirm_password")
-
-    if not password:
-        return make_response(jsonify({"success": False, "message": "Password is required"}), 400)
-    if password != confirm_password:
-        return make_response(jsonify({"success": False, "message": "Passwords do not match"}), 400)
 
     user = auth_service.get_user_by_id(user_id)
     user.set_password(password)
     g.db.commit()
 
-    return make_response(jsonify({
+    response_schema = ResetPasswordResponseSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Password reset successfully"
-    }))
+    })
+    return make_response(jsonify(response_payload))
 
 
 @jwt_required
 def list_users():
+    from app.validators.user_management_validator import ListUsersResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
     if not requesting_user or not requesting_user.is_admin:
         return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
@@ -200,15 +202,18 @@ def list_users():
             "is_admin": u.is_admin,
             "userType": u.userType
         })
-    return make_response(jsonify({
+    response_schema = ListUsersResponseSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "Users retrieved successfully",
         "data": serialized
-    }))
+    })
+    return make_response(jsonify(response_payload))
 
 
 @jwt_required
 def toggle_user_status(user_id):
+    from app.validators.user_management_validator import ToggleUserStatusRequestSchema, ToggleUserStatusResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
     if not requesting_user or not requesting_user.is_admin:
         return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
@@ -218,7 +223,8 @@ def toggle_user_status(user_id):
     if not user:
         return make_response(jsonify({"success": False, "message": "User not found"}), 404)
 
-    data = request.get_json() or {}
+    schema = ToggleUserStatusRequestSchema()
+    data = schema.load(request.get_json() or {})
     if "is_active" in data:
         user.is_active = bool(data["is_active"])
     if "is_admin" in data:
@@ -231,7 +237,8 @@ def toggle_user_status(user_id):
         user.age = int(data["age"])
 
     g.db.commit()
-    return make_response(jsonify({
+    response_schema = ToggleUserStatusResponseSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "User status updated successfully",
         "data": {
@@ -243,11 +250,13 @@ def toggle_user_status(user_id):
             "is_admin": user.is_admin,
             "userType": user.userType
         }
-    }))
+    })
+    return make_response(jsonify(response_payload))
 
 
 @jwt_required
 def delete_user(user_id):
+    from app.validators.user_management_validator import DeleteUserResponseSchema
     requesting_user = auth_service.get_user_by_id(g.user_id)
     if not requesting_user or not requesting_user.is_admin:
         return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
@@ -262,8 +271,11 @@ def delete_user(user_id):
 
     g.db.delete(user)
     g.db.commit()
-    return make_response(jsonify({
+    response_schema = DeleteUserResponseSchema()
+    response_payload = response_schema.dump({
         "success": True,
         "message": "User deleted successfully"
-    }))
+    })
+    return make_response(jsonify(response_payload))
+
 

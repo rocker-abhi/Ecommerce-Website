@@ -34,3 +34,9 @@ class ProductResponseSchema(Schema):
     success = fields.Boolean(required=True)
     message = fields.Str(required=True)
     data = fields.Dict(required=True)
+
+
+class ProductDeleteResponseSchema(Schema):
+    success = fields.Boolean(required=True)
+    message = fields.Str(required=True)
+

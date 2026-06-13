@@ -4,7 +4,11 @@ from flask.views import MethodView
 from app.middleware.jwt_middleware import jwt_required
 from app.middleware.permission_check_middleware import permission_requried
 from app.services.product_service import ProductService
-from app.validators.product_validator import ProductRequestSchema, ProductResponseSchema
+from app.validators.product_validator import (
+    ProductRequestSchema,
+    ProductResponseSchema,
+    ProductDeleteResponseSchema,
+)
 
 product_service = ProductService()
 
@@ -70,10 +74,11 @@ class ProductView(MethodView):
     @permission_requried("product:delete")
     def delete(self, product_id):
         product_service.delete_product(product_id)
-        response_payload = {
+        response_schema = ProductDeleteResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Product deleted successfully",
-        }
+        })
         return make_response(jsonify(response_payload))
 
     @jwt_required
@@ -157,6 +162,7 @@ class ProductView(MethodView):
         })
         return make_response(jsonify(response_payload))
 
+    @jwt_required
     def get(self, product_id):
         from app.models.product import ProductModel
         product = g.db.query(ProductModel).filter(ProductModel.id == product_id).first()
@@ -208,11 +214,13 @@ class ProductView(MethodView):
             "rating_distribution": rating_distribution
         }
 
-        return make_response(jsonify({
+        response_schema = ProductResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Product details retrieved successfully",
             "data": serialized
-        }))
+        })
+        return make_response(jsonify(response_payload))
 
 
 class ReviewView(MethodView):
@@ -220,24 +228,17 @@ class ReviewView(MethodView):
     def post(self, product_id):
         from app.models.product import ProductModel
         from app.models.review import ReviewModel
+        from app.validators.review_validator import ReviewRequestSchema, ReviewResponseSchema
 
         product = g.db.query(ProductModel).filter(ProductModel.id == product_id).first()
         if not product:
             return make_response(jsonify({"success": False, "message": "Product not found"}), 404)
 
-        data = request.get_json() or {}
+        schema = ReviewRequestSchema()
+        data = schema.load(request.get_json() or {})
+
         rating = data.get("rating")
         comment = data.get("comment")
-
-        if rating is None:
-            return make_response(jsonify({"success": False, "message": "Rating is required"}), 400)
-
-        try:
-            rating = int(rating)
-            if rating < 1 or rating > 5:
-                raise ValueError()
-        except ValueError:
-            return make_response(jsonify({"success": False, "message": "Rating must be an integer between 1 and 5"}), 400)
 
         review = ReviewModel(
             user_id=g.user_id,
@@ -248,8 +249,11 @@ class ReviewView(MethodView):
         g.db.add(review)
         g.db.commit()
 
-        return make_response(jsonify({
+        response_schema = ReviewResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Review submitted successfully"
-        }), 201)
+        })
+        return make_response(jsonify(response_payload), 201)
+
 

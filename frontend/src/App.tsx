@@ -3,6 +3,8 @@ import apiClient from './services/api';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Homepage } from './components/Homepage';
+import { ToastProvider } from './context/ToastContext';
+import { ToastContainer } from './components/Toast';
 
 type View = 'login' | 'register' | 'dashboard';
 
@@ -11,7 +13,6 @@ function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load auth session on startup
   useEffect(() => {
     const verifySession = async () => {
       const savedToken = localStorage.getItem('access_token');
@@ -36,7 +37,6 @@ function App() {
           throw new Error('Invalid user response');
         }
       } catch (err: any) {
-        console.error('Session verification failed:', err);
         const errCode = err.response?.data?.data?.error_code;
 
         if (errCode === 'TOKEN_EXPIRED') {
@@ -50,8 +50,6 @@ function App() {
               if (newTokens?.access_token && newTokens?.refresh_token) {
                 localStorage.setItem('access_token', newTokens.access_token);
                 localStorage.setItem('refresh_token', newTokens.refresh_token);
-
-                // Retry auth/me
                 const retryResponse = await apiClient.get('/auth/me');
                 const user = retryResponse.data?.data;
                 if (user && user.email) {
@@ -62,13 +60,12 @@ function App() {
                   return;
                 }
               }
-            } catch (refreshErr) {
-              console.error('Token refresh failed:', refreshErr);
+            } catch {
+              // token refresh failed
             }
           }
         }
 
-        // Clear everything and route to login if we get any other error or if refresh flow failed
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('userEmail');
@@ -108,8 +105,8 @@ function App() {
             });
           }
         }
-      } catch (err) {
-        console.error('Error logging out from server:', err);
+      } catch {
+        // logout error is non-critical
       }
     }
 
@@ -149,18 +146,71 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 font-sans">
-        <div className="text-zinc-600 text-sm animate-pulse">Verifying session...</div>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '20px',
+        background: 'var(--bg-base)'
+      }}>
+        {/* Animated Logo */}
+        <div style={{
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 28,
+          boxShadow: '0 0 40px rgba(99,102,241,0.4)',
+          animation: 'pulse-glow 2s ease-in-out infinite'
+        }}>
+          🛍️
+        </div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <span style={{
+            fontFamily: "'Sora', sans-serif",
+            fontSize: 22,
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #818cf8, #c084fc)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            ShopVerse
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 18,
+              height: 18,
+              border: '2px solid rgba(99,102,241,0.3)',
+              borderTopColor: '#6366f1',
+              borderRadius: '50%',
+              animation: 'spin 0.7s linear infinite'
+            }} />
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Verifying session...</span>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 font-sans">
-      <main className="flex-grow flex flex-col justify-center relative">
-        {renderContent()}
-      </main>
-    </div>
+    <ToastProvider>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          {renderContent()}
+        </main>
+      </div>
+      <ToastContainer />
+    </ToastProvider>
   );
 }
 

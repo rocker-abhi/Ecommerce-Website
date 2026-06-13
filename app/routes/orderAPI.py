@@ -11,6 +11,7 @@ from app.models.product import ProductModel
 from app.models.order import OrderModel
 from app.models.order_item import OrderItemModel
 from app.models.enums.database_enums import OrderStatus, PaymentStatus
+from app.validators.order_validator import OrderHistoryResponseSchema, OrderCreateResponseSchema
 
 class OrderAPI(MethodView):
     @jwt_required
@@ -59,24 +60,23 @@ class OrderAPI(MethodView):
                 } if payment else None,
             })
 
-        return make_response(jsonify({
+        response_schema = OrderHistoryResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Order history retrieved",
             "data": result,
-        }), 200)
+        })
+        return make_response(jsonify(response_payload), 200)
 
     @jwt_required
     def post(self):
+        from app.validators.order_validator import OrderCreateSchema
         user_id = g.user_id
-        body = request.get_json() or {}
+        schema = OrderCreateSchema()
+        body = schema.load(request.get_json() or {})
         address_id = body.get("address_id")
-        payment_method = body.get("payment_method", "COD")  # default Cash on Delivery
-        
-        if not address_id:
-            return make_response(jsonify({
-                "success": False,
-                "message": "Address selection is required for checkout"
-            }), 400)
+        payment_method = body.get("payment_method", "COD")
+
             
         # 1. Fetch user's cart
         cart = g.db.query(CartModel).filter(CartModel.user_id == user_id).first()
@@ -124,7 +124,7 @@ class OrderAPI(MethodView):
             if product.stock is not None:
                 product.stock -= quantity
                 g.db.add(product)
-
+ 
         # 3. Create the Order
         order = OrderModel(
             user_id=user_id,
@@ -149,7 +149,7 @@ class OrderAPI(MethodView):
             transaction_id=f"TXN-{uuid.uuid4().hex[:16].upper()}"
         )
         g.db.add(payment)
-
+ 
         # 5. Clear User's Cart
         cart.items = []
         flag_modified(cart, "items")
@@ -158,7 +158,8 @@ class OrderAPI(MethodView):
         # Commit transaction
         g.db.commit()
         
-        return make_response(jsonify({
+        response_schema = OrderCreateResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Order placed successfully",
             "data": {
@@ -168,4 +169,6 @@ class OrderAPI(MethodView):
                 "payment_status": payment.status.value,
                 "transaction_id": payment.transaction_id
             }
-        }), 201)
+        })
+        return make_response(jsonify(response_payload), 201)
+

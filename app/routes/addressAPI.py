@@ -2,6 +2,11 @@ from flask import g, jsonify, make_response, request
 from flask.views import MethodView
 from app.middleware.jwt_middleware import jwt_required
 from app.models.addresses import AddressModel
+from app.validators.address_validator import (
+    AddressResponseSchema,
+    AddressListResponseSchema,
+    AddressDeleteResponseSchema,
+)
 
 class AddressAPI(MethodView):
     @jwt_required
@@ -28,6 +33,12 @@ class AddressAPI(MethodView):
                 "country": address.country,
                 "is_active": address.is_active
             }
+            response_schema = AddressResponseSchema()
+            response_payload = response_schema.dump({
+                "success": True,
+                "message": "Address(es) retrieved successfully",
+                "data": data
+            })
         else:
             addresses = g.db.query(AddressModel).filter(
                 AddressModel.user_id == user_id,
@@ -43,45 +54,38 @@ class AddressAPI(MethodView):
                 "country": addr.country,
                 "is_active": addr.is_active
             } for addr in addresses]
+            response_schema = AddressListResponseSchema()
+            response_payload = response_schema.dump({
+                "success": True,
+                "message": "Address(es) retrieved successfully",
+                "data": data
+            })
             
-        return make_response(jsonify({
-            "success": True,
-            "message": "Address(es) retrieved successfully",
-            "data": data
-        }))
+        return make_response(jsonify(response_payload))
 
     @jwt_required
     def post(self):
+        from app.validators.address_validator import AddressCreateSchema
         user_id = g.user_id
-        body = request.get_json() or {}
+        schema = AddressCreateSchema()
+        body = schema.load(request.get_json() or {})
         
-        address_line_1 = body.get("address_line_1")
-        city = body.get("city")
-        state = body.get("state")
-        zip_code = body.get("zip_code")
-        country = body.get("country")
-        
-        if not all([address_line_1, city, state, zip_code, country]):
-            return make_response(jsonify({
-                "success": False,
-                "message": "Missing required fields"
-            }), 400)
-            
         address = AddressModel(
             user_id=user_id,
-            address_line_1=address_line_1,
+            address_line_1=body.get("address_line_1"),
             address_line_2=body.get("address_line_2"),
-            city=city,
-            state=state,
-            zip_code=zip_code,
-            country=country,
+            city=body.get("city"),
+            state=body.get("state"),
+            zip_code=body.get("zip_code"),
+            country=body.get("country"),
             is_active=True
         )
         
         g.db.add(address)
         g.db.commit()
         
-        return make_response(jsonify({
+        response_schema = AddressResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Address created successfully",
             "data": {
@@ -94,12 +98,15 @@ class AddressAPI(MethodView):
                 "country": address.country,
                 "is_active": address.is_active
             }
-        }), 201)
+        })
+        return make_response(jsonify(response_payload), 201)
 
     @jwt_required
     def put(self, address_id):
+        from app.validators.address_validator import AddressUpdateSchema
         user_id = g.user_id
-        body = request.get_json() or {}
+        schema = AddressUpdateSchema()
+        body = schema.load(request.get_json() or {})
         
         address = g.db.query(AddressModel).filter(
             AddressModel.user_id == user_id,
@@ -128,7 +135,8 @@ class AddressAPI(MethodView):
             
         g.db.commit()
         
-        return make_response(jsonify({
+        response_schema = AddressResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Address updated successfully",
             "data": {
@@ -141,7 +149,9 @@ class AddressAPI(MethodView):
                 "country": address.country,
                 "is_active": address.is_active
             }
-        }))
+        })
+        return make_response(jsonify(response_payload))
+
 
     @jwt_required
     def delete(self, address_id):
@@ -161,7 +171,10 @@ class AddressAPI(MethodView):
         address.is_active = False
         g.db.commit()
         
-        return make_response(jsonify({
+        response_schema = AddressDeleteResponseSchema()
+        response_payload = response_schema.dump({
             "success": True,
             "message": "Address deleted successfully"
-        }))
+        })
+        return make_response(jsonify(response_payload))
+

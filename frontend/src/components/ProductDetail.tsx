@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../services/api';
 import { type Product } from './Homepage';
+import { useToast } from '../context/ToastContext';
 
 interface ProductDetailProps {
   productId: string | number;
@@ -43,764 +44,6 @@ interface DetailedProduct {
   rating_distribution: Record<number, number>;
 }
 
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  
-  .pd-root {
-    font-family: 'Inter', sans-serif;
-    background: #f8fafc;
-    min-height: 100vh;
-    color: #1e293b;
-    padding-bottom: 64px;
-    text-align: left;
-  }
-
-  .pd-header {
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0 32px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .pd-back-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: 1px solid #e2e8f0;
-    border-radius: 9px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .pd-back-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
-
-  .pd-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  .pd-breadcrumbs {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 24px;
-    font-weight: 500;
-  }
-
-  .pd-breadcrumbs span.separator {
-    color: #cbd5e1;
-  }
-
-  .pd-breadcrumbs span.active {
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  .pd-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1.5fr 1fr;
-    gap: 32px;
-    margin-bottom: 40px;
-  }
-
-  @media (max-width: 1024px) {
-    .pd-grid {
-      grid-template-columns: 1fr 1.2fr;
-    }
-    .pd-buy-box-wrapper {
-      grid-column: span 2;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .pd-grid {
-      grid-template-columns: 1fr;
-    }
-    .pd-buy-box-wrapper {
-      grid-column: span 1;
-    }
-  }
-
-  /* Gallery Styling */
-  .pd-gallery {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .pd-main-img-container {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    height: 450px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-  }
-
-  .pd-main-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-  }
-
-  .pd-main-img-container:hover .pd-main-img {
-    transform: scale(1.15);
-  }
-
-  .pd-thumbnails {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
-
-  .pd-thumb {
-    width: 68px;
-    height: 68px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    background: #fff;
-    padding: 6px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pd-thumb:hover {
-    border-color: #94a3b8;
-  }
-
-  .pd-thumb.active {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
-
-  .pd-thumb img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  /* Info Column Styling */
-  .pd-info-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-  }
-
-  .pd-badge-cat {
-    display: inline-block;
-    background: #e0e7ff;
-    color: #4338ca;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 16px;
-  }
-
-  .pd-title {
-    font-size: 28px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1.25;
-    margin: 0 0 12px;
-  }
-
-  .pd-rating-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .pd-stars {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    color: #f59e0b;
-    font-size: 16px;
-    font-weight: bold;
-  }
-
-  .pd-rating-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6366f1;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  
-  .pd-rating-text:hover {
-    text-decoration: underline;
-  }
-
-  .pd-meta-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid #f1f5f9;
-    border-bottom: 1px solid #f1f5f9;
-    padding: 18px 0;
-    margin-bottom: 24px;
-    font-size: 13px;
-  }
-
-  .pd-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .pd-meta-label {
-    color: #64748b;
-    font-weight: 500;
-    width: 90px;
-  }
-
-  .pd-meta-val {
-    color: #0f172a;
-    font-weight: 600;
-  }
-
-  /* Buy Box Styling */
-  .pd-buy-box {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    position: sticky;
-    top: 88px;
-  }
-
-  .pd-price-row {
-    margin-bottom: 20px;
-  }
-
-  .pd-price-label {
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
-
-  .pd-price-amount {
-    font-size: 36px;
-    font-weight: 900;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-
-  .pd-stock-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 20px;
-  }
-
-  .pd-stock-instock {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
-  }
-
-  .pd-stock-low {
-    background: #fffbeb;
-    color: #b45309;
-    border: 1px solid #fde68a;
-  }
-
-  .pd-stock-out {
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-  }
-
-  .pd-qty-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 24px;
-  }
-
-  .pd-qty-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-  }
-
-  .pd-qty-selector {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .pd-qty-btn {
-    width: 28px;
-    height: 28px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: #fff;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.1s ease;
-  }
-
-  .pd-qty-btn:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-  }
-
-  .pd-qty-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .pd-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .pd-btn {
-    width: 100%;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .pd-btn-primary {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: #fff;
-    border: none;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-  }
-
-  .pd-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4338ca, #4f46e5);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
-  }
-
-  .pd-btn-secondary {
-    background: #fff;
-    color: #0f172a;
-    border: 1px solid #cbd5e1;
-  }
-
-  .pd-btn-secondary:hover:not(:disabled) {
-    background: #f8fafc;
-    border-color: #94a3b8;
-  }
-
-  .pd-btn-wishlisted {
-    background: #fef2f2;
-    color: #ef4444;
-    border: 1px solid #fecaca;
-  }
-
-  .pd-btn-wishlisted:hover {
-    background: #ffe4e4;
-  }
-
-  .pd-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Tabs Section Styling */
-  .pd-tabs-container {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    margin-bottom: 40px;
-  }
-
-  .pd-tabs-header {
-    display: flex;
-    gap: 24px;
-    border-bottom: 1px solid #f1f5f9;
-    margin-bottom: 24px;
-  }
-
-  .pd-tab-trigger {
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    padding: 12px 4px;
-    font-size: 15px;
-    font-weight: 700;
-    color: #64748b;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .pd-tab-trigger:hover {
-    color: #0f172a;
-  }
-
-  .pd-tab-trigger.active {
-    color: #6366f1;
-    border-color: #6366f1;
-  }
-
-  .pd-tab-content {
-    line-height: 1.6;
-    font-size: 14px;
-    color: #475569;
-  }
-
-  /* Spec Table */
-  .pd-spec-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .pd-spec-table tr {
-    border-bottom: 1px solid #f1f5f9;
-  }
-
-  .pd-spec-table tr:last-child {
-    border-bottom: none;
-  }
-
-  .pd-spec-table td {
-    padding: 12px 16px;
-  }
-
-  .pd-spec-label {
-    width: 200px;
-    font-weight: 600;
-    color: #64748b;
-  }
-
-  .pd-spec-val {
-    color: #1e293b;
-  }
-
-  /* Review Section styling */
-  .pd-reviews-layout {
-    display: grid;
-    grid-template-columns: 1.2fr 2fr;
-    gap: 40px;
-  }
-
-  @media (max-width: 768px) {
-    .pd-reviews-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .pd-review-summary-box {
-    background: #f8fafc;
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid #e2e8f0;
-  }
-
-  .pd-avg-rating-big {
-    font-size: 48px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .pd-distribution {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 24px;
-  }
-
-  .pd-dist-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-  }
-
-  .pd-dist-bar-bg {
-    flex: 1;
-    height: 8px;
-    background: #e2e8f0;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .pd-dist-bar-fill {
-    height: 100%;
-    background: #f59e0b;
-    border-radius: 4px;
-  }
-
-  .pd-dist-percent {
-    width: 38px;
-    text-align: right;
-    color: #64748b;
-  }
-
-  .pd-review-form {
-    border-top: 1px solid #e2e8f0;
-    margin-top: 24px;
-    padding-top: 24px;
-  }
-
-  .pd-review-form-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 16px;
-  }
-
-  .pd-star-picker {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-  }
-
-  .pd-star-pick-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #e2e8f0;
-    transition: color 0.1s ease;
-  }
-
-  .pd-star-pick-btn.active {
-    color: #f59e0b;
-  }
-
-  .pd-comment-textarea {
-    width: 100%;
-    height: 100px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 13px;
-    outline: none;
-    resize: none;
-    margin-bottom: 12px;
-    font-family: inherit;
-  }
-
-  .pd-comment-textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
-
-  /* Reviews List */
-  .pd-reviews-list {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .pd-review-card {
-    border-bottom: 1px solid #f1f5f9;
-    padding-bottom: 24px;
-  }
-
-  .pd-review-card:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .pd-review-user-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .pd-review-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: #475569;
-    font-size: 14px;
-    overflow: hidden;
-  }
-
-  .pd-review-username {
-    font-size: 14px;
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  .pd-review-date {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-top: 1px;
-  }
-
-  .pd-review-stars {
-    color: #f59e0b;
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  .pd-review-comment {
-    font-size: 13.5px;
-    color: #334155;
-    line-height: 1.5;
-  }
-
-  /* Related Products */
-  .pd-related-section {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  .pd-related-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 20px;
-  }
-
-  .pd-related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-  }
-
-  .pd-related-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .pd-related-card:hover {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    transform: translateY(-2px);
-  }
-
-  .pd-related-img-box {
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-    border-bottom: 1px solid #f1f5f9;
-    margin-bottom: 12px;
-  }
-
-  .pd-related-img-box img {
-    max-height: 100%;
-    max-width: 100%;
-    object-fit: contain;
-  }
-
-  .pd-related-name {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #0f172a;
-    line-clamp: 2;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-
-  .pd-related-price {
-    font-size: 14px;
-    font-weight: 800;
-    color: #ef4444;
-  }
-
-  /* Loading State */
-  .pd-loading-overlay {
-    min-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .pd-spinner {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 4px solid #e2e8f0;
-    border-top-color: #6366f1;
-    animation: pd-spin 0.8s linear infinite;
-  }
-  @keyframes pd-spin {
-    to { transform: rotate(360deg); }
-  }
-`;
-
 export const ProductDetail: React.FC<ProductDetailProps> = ({
   productId,
   onBack,
@@ -810,12 +53,12 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
   wishlist,
   onProceedToCheckout
 }) => {
+  const { showToast } = useToast();
   const [product, setProduct] = useState<DetailedProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Gallery
-  // Tab states
+  // Tab state
   const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews'>('description');
   
   // Quantity selector
@@ -835,7 +78,6 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
       if (res.data?.success) {
         const p: DetailedProduct = res.data.data;
         setProduct(p);
-        // Set details
       } else {
         setError(res.data?.message || 'Failed to load product details');
       }
@@ -864,7 +106,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
       if (res.data?.success) {
         setReviewComment('');
         setReviewRating(5);
-        // Reload details to show updated reviews list and average rating
+        showToast('success', 'Review Submitted', 'Thank you for your feedback!');
         await loadProductDetails();
       } else {
         setReviewFormError(res.data?.message || 'Failed to submit review');
@@ -876,42 +118,28 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   };
 
-
-
   if (loading) {
     return (
-      <>
-        <style>{css}</style>
-        <div className="pd-root">
-          <div className="pd-loading-overlay">
-            <div className="pd-spinner"></div>
-            <p style={{ marginTop: 16, fontSize: 13, color: '#64748b', fontWeight: 600 }}>Loading product details...</p>
-          </div>
-        </div>
-      </>
+      <div className="min-height-[70vh] flex flex-col items-center justify-center select-none animate-fade-in">
+        <svg className="animate-spin h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p className="mt-4 text-xs font-semibold text-slate-400">Syncing listing data...</p>
+      </div>
     );
   }
 
   if (error || !product) {
     return (
-      <>
-        <style>{css}</style>
-        <div className="pd-root">
-          <div className="pd-header">
-            <button className="pd-back-btn" onClick={onBack}>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Catalog
-            </button>
-          </div>
-          <div className="pd-container" style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <h2 style={{ color: '#ef4444', marginBottom: 12 }}>Product Details Unavailable</h2>
-            <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>{error || 'The requested product could not be loaded.'}</p>
-            <button className="pd-back-btn" style={{ margin: '0 auto' }} onClick={onBack}>Return to Storefront</button>
-          </div>
-        </div>
-      </>
+      <div className="max-w-xl mx-auto my-12 p-8 glass-card-static text-center select-none animate-fade-in">
+        <div className="text-5xl mb-4">⚠️</div>
+        <h3 className="text-lg font-bold text-slate-200">Listing Unavailable</h3>
+        <p className="text-xs text-slate-400 mt-2">{error || 'The requested product detail could not be loaded.'}</p>
+        <button className="btn-primary mt-6 w-full sm:w-auto" onClick={onBack}>
+          Return to Store
+        </button>
+      </div>
     );
   }
 
@@ -919,411 +147,435 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
   const isOutOfStock = product.stock <= 0;
 
   return (
-    <>
-      <style>{css}</style>
-      <div className="pd-root">
-        {/* Navigation Bar */}
-        <div className="pd-header">
-          <button className="pd-back-btn" onClick={onBack}>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Catalog
-          </button>
-          <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>
-            SKU: <span style={{ color: '#0f172a', fontFamily: 'monospace' }}>{product.sku || 'N/A'}</span>
+    <div className="max-w-6xl mx-auto px-4 py-8 select-none animate-fade-in-up">
+      
+      {/* Back navigation header */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+        <button 
+          onClick={onBack}
+          className="btn-secondary group cursor-pointer"
+        >
+          <svg 
+            className="w-4 h-4 transition-transform group-hover:-translate-x-1" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor" 
+            strokeWidth="2.5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Store
+        </button>
+        <span className="text-xs font-mono font-bold text-slate-500">
+          SKU: <span className="text-indigo-400">{product.sku || 'N/A'}</span>
+        </span>
+      </div>
+
+      {/* Main product display grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+        
+        {/* Left Side: Product Image Panel */}
+        <div className="lg:col-span-5">
+          <div className="glass-card-static p-6 h-[400px] flex items-center justify-center overflow-hidden relative group">
+            <img 
+              src={product.image_url} 
+              alt={product.name} 
+              className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105" 
+            />
           </div>
         </div>
 
-        <div className="pd-container">
-          {/* Breadcrumbs */}
-          <div className="pd-breadcrumbs">
-            <span>Storefront</span>
-            <span className="separator">/</span>
-            <span>{product.category}</span>
-            {product.subcategory && (
-              <>
-                <span className="separator">/</span>
-                <span>{product.subcategory}</span>
-              </>
+        {/* Center: Info Details Panel */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="glass-card-static p-6 space-y-4">
+            <span className="badge badge-accent">{product.category}</span>
+            <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight leading-tight">{product.name}</h1>
+            
+            {/* Ratings Summary line */}
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-amber-500 font-bold flex items-center gap-1">
+                ★ {product.average_rating}
+              </span>
+              <span className="text-slate-600">|</span>
+              <button 
+                onClick={() => {
+                  setActiveTab('reviews');
+                  document.getElementById('product-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
+              >
+                {product.review_count} customer review{product.review_count !== 1 ? 's' : ''}
+              </button>
+            </div>
+
+            <hr className="border-white/5" />
+
+            <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
+              {product.description}
+            </p>
+
+            <hr className="border-white/5" />
+
+            {/* Checklist attributes */}
+            <div className="text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Category:</span>
+                <span className="font-semibold text-slate-300">{product.category}</span>
+              </div>
+              {product.subcategory && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Subcategory:</span>
+                  <span className="font-semibold text-slate-300">{product.subcategory}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Merchant:</span>
+                <span className="font-semibold text-indigo-400">{product.seller?.name || 'Authorized ShopVerse Vendor'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Warranty:</span>
+                <span className="font-semibold text-slate-300">1 Year Brand Protection</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Buy Box Card */}
+        <div className="lg:col-span-3">
+          <div className="glass-card-static p-6 space-y-6 sticky top-24">
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Deal Price</span>
+              <div className="text-3xl font-extrabold text-slate-100 flex items-baseline">
+                <span className="text-lg font-bold mr-1">₹</span>
+                {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div>
+              {isOutOfStock ? (
+                <span className="badge badge-error w-full justify-center py-2 text-xs">✕ Out of Stock</span>
+              ) : product.stock <= 10 ? (
+                <span className="badge badge-warning w-full justify-center py-2 text-xs">⚠️ Only {product.stock} units left</span>
+              ) : (
+                <span className="badge badge-success w-full justify-center py-2 text-xs">✓ In Stock ({product.stock})</span>
+              )}
+            </div>
+
+            {/* Quantity controller */}
+            {!isOutOfStock && (
+              <div className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/2">
+                <span className="text-xs font-semibold text-slate-400">Qty:</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-sm hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer"
+                    disabled={quantity <= 1}
+                    onClick={() => setQuantity(prev => prev - 1)}
+                  >
+                    -
+                  </button>
+                  <span className="text-sm font-bold text-slate-200 w-6 text-center">{quantity}</span>
+                  <button
+                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-sm hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer"
+                    disabled={quantity >= product.stock}
+                    onClick={() => setQuantity(prev => prev + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             )}
-            <span className="separator">/</span>
-            <span className="active">{product.name}</span>
-          </div>
 
-          {/* Product Hero Grid */}
-          <div className="pd-grid">
-            {/* Gallery Column */}
-            <div className="pd-gallery">
-              <div className="pd-main-img-container">
-                <img src={product.image_url} alt={product.name} className="pd-main-img" />
-              </div>
-            </div>
-
-            {/* Info Column */}
-            <div className="pd-info-card">
-              <span className="pd-badge-cat">{product.category}</span>
-              <h1 className="pd-title">{product.name}</h1>
-
-              {/* Ratings summary */}
-              <div className="pd-rating-row">
-                <div className="pd-stars">
-                  <span>★ {product.average_rating}</span>
-                </div>
-                <span style={{ color: '#cbd5e1' }}>|</span>
-                <span 
-                  className="pd-rating-text" 
-                  onClick={() => {
-                    setActiveTab('reviews');
-                    const el = document.getElementById('pd-tabs-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  {product.review_count} customer review{product.review_count !== 1 ? 's' : ''}
-                </span>
-              </div>
-
-              {/* Product specifications teaser */}
-              <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-                {product.description}
-              </p>
-
-              {/* Info checklist */}
-              <div className="pd-meta-list">
-                <div className="pd-meta-item">
-                  <span className="pd-meta-label">Category:</span>
-                  <span className="pd-meta-val">{product.category}</span>
-                </div>
-                {product.subcategory && (
-                  <div className="pd-meta-item">
-                    <span className="pd-meta-label">Subcategory:</span>
-                    <span className="pd-meta-val">{product.subcategory}</span>
-                  </div>
-                )}
-                <div className="pd-meta-item">
-                  <span className="pd-meta-label">Merchant:</span>
-                  <span className="pd-meta-val" style={{ color: '#6366f1' }}>{product.seller?.name || 'Authorized Seller'}</span>
-                </div>
-                <div className="pd-meta-item">
-                  <span className="pd-meta-label">Warranty:</span>
-                  <span className="pd-meta-val">1 Year Brand Warranty</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Buy Box Column */}
-            <div className="pd-buy-box-wrapper">
-              <div className="pd-buy-box">
-                {/* Pricing info */}
-                <div className="pd-price-row">
-                  <div className="pd-price-label">Deal Price</div>
-                  <div className="pd-price-amount">
-                    <span style={{ fontSize: 20, fontWeight: 700, alignSelf: 'flex-start', marginTop: 2 }}>$</span>
-                    {product.price.toFixed(2)}
-                  </div>
-                </div>
-
-                {/* Stock status indicator */}
-                <div>
-                  {isOutOfStock ? (
-                    <span className="pd-stock-badge pd-stock-out">✕ Temporarily Out of Stock</span>
-                  ) : product.stock <= 10 ? (
-                    <span className="pd-stock-badge pd-stock-low">⚠ Only {product.stock} items left in stock</span>
-                  ) : (
-                    <span className="pd-stock-badge pd-stock-instock">✓ In Stock ({product.stock} available)</span>
-                  )}
-                </div>
-
-                {/* Quantity select */}
-                {!isOutOfStock && (
-                  <div className="pd-qty-row">
-                    <span className="pd-qty-label">Quantity:</span>
-                    <div className="pd-qty-selector">
-                      <button
-                        className="pd-qty-btn"
-                        disabled={quantity <= 1}
-                        onClick={() => setQuantity(prev => prev - 1)}
-                      >
-                        -
-                      </button>
-                      <span style={{ fontSize: 13, fontWeight: 700, width: 20, textAlign: 'center' }}>{quantity}</span>
-                      <button
-                        className="pd-qty-btn"
-                        disabled={quantity >= product.stock}
-                        onClick={() => setQuantity(prev => prev + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="pd-actions">
-                  <button
-                    className="pd-btn pd-btn-primary"
-                    disabled={isOutOfStock}
-                    onClick={() => {
-                      const p: Product = {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        category: product.category as any,
-                        subcategory: product.subcategory,
-                        rating: product.average_rating,
-                        image: product.image_url,
-                        description: product.description,
-                        sku: product.sku,
-                        stock: product.stock
-                      };
-                      // Add selected quantity of products to cart
-                      for (let i = 0; i < quantity; i++) {
-                        addToCart(p);
-                      }
-                      alert(`Successfully added ${quantity} item(s) to Cart!`);
-                    }}
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    className="pd-btn pd-btn-secondary"
-                    disabled={isOutOfStock}
-                    onClick={() => {
-                      const p: Product = {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        category: product.category as any,
-                        subcategory: product.subcategory,
-                        rating: product.average_rating,
-                        image: product.image_url,
-                        description: product.description,
-                        sku: product.sku,
-                        stock: product.stock
-                      };
-                      addToCart(p);
-                      if (onProceedToCheckout) {
-                        onProceedToCheckout();
-                      }
-                    }}
-                  >
-                    Buy Now
-                  </button>
-                  <button
-                    className={`pd-btn ${isWishlisted ? 'pd-btn-wishlisted' : 'pd-btn-secondary'}`}
-                    onClick={() => {
-                      const p: Product = {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        category: product.category as any,
-                        subcategory: product.subcategory,
-                        rating: product.average_rating,
-                        image: product.image_url,
-                        description: product.description,
-                        sku: product.sku,
-                        stock: product.stock
-                      };
-                      if (isWishlisted) {
-                        removeFromWishlist(product.id);
-                      } else {
-                        addToWishlist(p);
-                      }
-                    }}
-                  >
-                    <svg width="16" height="16" fill={isWishlisted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    {isWishlisted ? 'Remove Wishlist' : 'Add to Wishlist'}
-                  </button>
-                </div>
-
-                <div style={{ marginTop: 20, fontSize: 11, color: '#64748b', textAlign: 'center', lineHeight: 1.4 }}>
-                  🔒 Secure transaction. Qualifying items enjoy free shipping.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Specification/Reviews Tabs */}
-          <div className="pd-tabs-container" id="pd-tabs-section">
-            <div className="pd-tabs-header">
+            {/* Actions list */}
+            <div className="space-y-3">
               <button
-                className={`pd-tab-trigger ${activeTab === 'description' ? 'active' : ''}`}
-                onClick={() => setActiveTab('description')}
+                className="btn-primary w-full text-xs py-3"
+                disabled={isOutOfStock}
+                onClick={() => {
+                  const p: Product = {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    category: product.category as any,
+                    subcategory: product.subcategory,
+                    rating: product.average_rating,
+                    image: product.image_url,
+                    description: product.description,
+                    sku: product.sku,
+                    stock: product.stock
+                  };
+                  for (let i = 0; i < quantity; i++) {
+                    addToCart(p);
+                  }
+                  showToast('success', 'Added to Cart', `${quantity} unit(s) of "${product.name}" added.`);
+                }}
               >
-                Description
+                Add to Cart
               </button>
+
               <button
-                className={`pd-tab-trigger ${activeTab === 'specifications' ? 'active' : ''}`}
-                onClick={() => setActiveTab('specifications')}
+                className="btn-secondary w-full text-xs py-3"
+                disabled={isOutOfStock}
+                onClick={() => {
+                  const p: Product = {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    category: product.category as any,
+                    subcategory: product.subcategory,
+                    rating: product.average_rating,
+                    image: product.image_url,
+                    description: product.description,
+                    sku: product.sku,
+                    stock: product.stock
+                  };
+                  addToCart(p);
+                  if (onProceedToCheckout) {
+                    onProceedToCheckout();
+                  }
+                }}
               >
-                Specifications
+                Buy Now
               </button>
+
               <button
-                className={`pd-tab-trigger ${activeTab === 'reviews' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reviews')}
+                className={`w-full text-xs py-3 rounded-lg font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  isWishlisted 
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20' 
+                    : 'btn-secondary'
+                }`}
+                onClick={() => {
+                  const p: Product = {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    category: product.category as any,
+                    subcategory: product.subcategory,
+                    rating: product.average_rating,
+                    image: product.image_url,
+                    description: product.description,
+                    sku: product.sku,
+                    stock: product.stock
+                  };
+                  if (isWishlisted) {
+                    removeFromWishlist(product.id);
+                    showToast('info', 'Wishlist Removed', 'Item removed from your wishlist.');
+                  } else {
+                    addToWishlist(p);
+                    showToast('success', 'Wishlist Added', 'Item saved to your wishlist.');
+                  }
+                }}
               >
-                Reviews ({product.review_count})
+                <svg width="15" height="15" fill={isWishlisted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {isWishlisted ? 'Saved' : 'Save to Wishlist'}
               </button>
             </div>
 
-            {/* Tab content renderer */}
-            <div className="pd-tab-content">
-              {activeTab === 'description' && (
-                <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>About this item</h3>
-                  <p style={{ whiteSpace: 'pre-line', lineHeight: 1.7 }}>{product.description}</p>
-                </div>
-              )}
-
-              {activeTab === 'specifications' && (
-                <table className="pd-spec-table">
-                  <tbody>
-                    <tr>
-                      <td className="pd-spec-label">Item SKU</td>
-                      <td className="pd-spec-val" style={{ fontFamily: 'monospace' }}>{product.sku || 'N/A'}</td>
-                    </tr>
-                    <tr>
-                      <td className="pd-spec-label">Category</td>
-                      <td className="pd-spec-val">{product.category}</td>
-                    </tr>
-                    {product.subcategory && (
-                      <tr>
-                        <td className="pd-spec-label">Subcategory</td>
-                        <td className="pd-spec-val">{product.subcategory}</td>
-                      </tr>
-                    )}
-                    <tr>
-                      <td className="pd-spec-label">Seller Store</td>
-                      <td className="pd-spec-val">{product.seller?.name || 'Standard Store'}</td>
-                    </tr>
-                    <tr>
-                      <td className="pd-spec-label">Stock Status</td>
-                      <td className="pd-spec-val">{product.stock} units currently listed</td>
-                    </tr>
-                    <tr>
-                      <td className="pd-spec-label">Warranty Duration</td>
-                      <td className="pd-spec-val">1 Year standard warranty coverage</td>
-                    </tr>
-                  </tbody>
-                </table>
-              )}
-
-              {activeTab === 'reviews' && (
-                <div className="pd-reviews-layout">
-                  {/* Reviews Summary distribution chart */}
-                  <div>
-                    <div className="pd-review-summary-box">
-                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Customer Ratings</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className="pd-avg-rating-big">{product.average_rating}</div>
-                        <div>
-                          <div className="pd-stars" style={{ fontSize: 13 }}>★ ★ ★ ★ ★</div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{product.review_count} ratings</div>
-                        </div>
-                      </div>
-
-                      {/* Distribution breakdown chart */}
-                      <div className="pd-distribution">
-                        {[5, 4, 3, 2, 1].map(stars => {
-                          const pct = product.rating_distribution[stars] || 0.0;
-                          return (
-                            <div key={stars} className="pd-dist-row">
-                              <span style={{ width: 45 }}>{stars} Star</span>
-                              <div className="pd-dist-bar-bg">
-                                <div className="pd-dist-bar-fill" style={{ width: `${pct}%` }}></div>
-                              </div>
-                              <span className="pd-dist-percent">{pct}%</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Write Review Form */}
-                    <div className="pd-review-form">
-                      <h4 className="pd-review-form-title">Write a Customer Review</h4>
-                      <form onSubmit={handleSubmitReview}>
-                        <div style={{ marginBottom: 12 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Overall Rating</span>
-                          <div className="pd-star-picker">
-                            {[1, 2, 3, 4, 5].map(stars => (
-                              <button
-                                key={stars}
-                                type="button"
-                                className={`pd-star-pick-btn ${reviewRating >= stars ? 'active' : ''}`}
-                                onClick={() => setReviewRating(stars)}
-                              >
-                                ★
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div style={{ marginBottom: 12 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Write comment</span>
-                          <textarea
-                            className="pd-comment-textarea"
-                            placeholder="What did you like or dislike about this product?"
-                            value={reviewComment}
-                            onChange={(e) => setReviewComment(e.target.value)}
-                            required
-                          />
-                        </div>
-
-                        {reviewFormError && (
-                          <p style={{ color: '#ef4444', fontSize: 11, fontWeight: 600, marginBottom: 12 }}>⚠ {reviewFormError}</p>
-                        )}
-
-                        <button
-                          type="submit"
-                          className="pd-btn pd-btn-primary"
-                          style={{ padding: '8px 16px', fontSize: 12, width: 'auto' }}
-                          disabled={submittingReview}
-                        >
-                          {submittingReview ? 'Submitting...' : 'Submit Review'}
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                  {/* Reviews List */}
-                  <div className="pd-reviews-list">
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Top Reviews</h3>
-                    {product.reviews.length === 0 ? (
-                      <p style={{ color: '#64748b', fontSize: 13, padding: '16px 0' }}>No reviews yet. Be the first to review this product!</p>
-                    ) : (
-                      product.reviews.map(rev => (
-                        <div key={rev.id} className="pd-review-card">
-                          <div className="pd-review-user-row">
-                            <div className="pd-review-avatar">
-                              {rev.user_profile_pic ? (
-                                <img src={rev.user_profile_pic} alt={rev.user_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              ) : (
-                                rev.user_name.slice(0, 2).toUpperCase()
-                              )}
-                            </div>
-                            <div>
-                              <div className="pd-review-username">{rev.user_name}</div>
-                              <div className="pd-review-date">Reviewed on {rev.created_at ? new Date(rev.created_at).toLocaleDateString() : 'recent'}</div>
-                            </div>
-                          </div>
-                          <div className="pd-review-stars">
-                            {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
-                          </div>
-                          <div className="pd-review-comment">{rev.comment || 'No written comment provided.'}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
+            <div className="text-[10px] text-slate-500 text-center leading-relaxed border-t border-white/5 pt-4">
+              🔒 SSL Encrypted transactions. Fully qualifying orders receive free freight service.
             </div>
           </div>
         </div>
 
       </div>
-    </>
+
+      {/* Tabs Drawer Details */}
+      <div className="glass-card-static p-8" id="product-tabs-section">
+        
+        {/* Tab triggers */}
+        <div className="flex border-b border-white/5 mb-6 gap-6">
+          <button
+            onClick={() => setActiveTab('description')}
+            className={`pb-3 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+              activeTab === 'description' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Description
+          </button>
+          <button
+            onClick={() => setActiveTab('specifications')}
+            className={`pb-3 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+              activeTab === 'specifications' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Specifications
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`pb-3 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+              activeTab === 'reviews' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Reviews ({product.review_count})
+          </button>
+        </div>
+
+        {/* Tab display */}
+        <div className="text-sm leading-relaxed text-slate-300">
+          
+          {activeTab === 'description' && (
+            <div className="animate-fade-in space-y-3">
+              <h3 className="font-bold text-slate-100">About this item</h3>
+              <p className="whitespace-pre-wrap text-slate-400">{product.description}</p>
+            </div>
+          )}
+
+          {activeTab === 'specifications' && (
+            <div className="animate-fade-in overflow-hidden border border-white/5 rounded-xl">
+              <table className="w-full border-collapse text-left text-xs text-slate-400">
+                <tbody className="divide-y divide-white/5">
+                  <tr className="hover:bg-white/[0.01]">
+                    <td className="p-4 font-bold text-slate-300 w-1/3">Stock Keeping Unit (SKU)</td>
+                    <td className="p-4 font-mono text-indigo-400">{product.sku || 'N/A'}</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.01]">
+                    <td className="p-4 font-bold text-slate-300">Category Tag</td>
+                    <td className="p-4">{product.category}</td>
+                  </tr>
+                  {product.subcategory && (
+                    <tr className="hover:bg-white/[0.01]">
+                      <td className="p-4 font-bold text-slate-300">Subcategory Tag</td>
+                      <td className="p-4">{product.subcategory}</td>
+                    </tr>
+                  )}
+                  <tr className="hover:bg-white/[0.01]">
+                    <td className="p-4 font-bold text-slate-300">Authorized Merchant</td>
+                    <td className="p-4">{product.seller?.name || 'ShopVerse Merchant'}</td>
+                  </tr>
+                  <tr className="hover:bg-white/[0.01]">
+                    <td className="p-4 font-bold text-slate-300">Warranty Term</td>
+                    <td className="p-4">1 Year Brand protection term</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className="animate-fade-in grid grid-cols-1 md:grid-cols-12 gap-8">
+              
+              {/* Review analytics distribution */}
+              <div className="md:col-span-4 space-y-6">
+                <div className="p-5 rounded-xl bg-white/2 border border-white/5">
+                  <h3 className="font-bold text-slate-200 text-xs uppercase tracking-wider mb-4">Rating Summary</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="text-4xl font-extrabold text-slate-100">{product.average_rating}</div>
+                    <div>
+                      <div className="text-amber-500 font-semibold">★ ★ ★ ★ ★</div>
+                      <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{product.review_count} overall reviews</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-6">
+                    {[5, 4, 3, 2, 1].map(stars => {
+                      const pct = product.rating_distribution[stars] || 0;
+                      return (
+                        <div key={stars} className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
+                          <span className="w-10 whitespace-nowrap">{stars} Star</span>
+                          <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-500" style={{ width: `${pct}%` }}></div>
+                          </div>
+                          <span className="w-8 text-right text-slate-500">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Write Review Form */}
+                <form onSubmit={handleSubmitReview} className="p-5 rounded-xl bg-white/2 border border-white/5 space-y-4">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-indigo-400">Add Customer Review</h4>
+                  
+                  <div className="space-y-1.5">
+                    <label className="form-label">Product Rating</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(stars => (
+                        <button
+                          key={stars}
+                          type="button"
+                          className={`text-2xl cursor-pointer focus:outline-none transition-colors ${
+                            reviewRating >= stars ? 'text-amber-500' : 'text-slate-650 hover:text-amber-600'
+                          }`}
+                          onClick={() => setReviewRating(stars)}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="form-label">Review Comment</label>
+                    <textarea
+                      placeholder="Share your experience with this product..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="glass-input min-h-[80px] py-2 resize-y"
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  {reviewFormError && (
+                    <div className="text-rose-500 text-xs font-semibold">⚠️ {reviewFormError}</div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="btn-primary !px-4 !py-2 text-xs w-full sm:w-auto"
+                  >
+                    {submittingReview ? 'Submitting...' : 'Post Review'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Reviews listing column */}
+              <div className="md:col-span-8 space-y-6">
+                <h3 className="font-bold text-slate-200">Customer Feedback</h3>
+                
+                {product.reviews.length === 0 ? (
+                  <div className="p-12 text-center border border-dashed border-white/10 rounded-xl text-slate-500 text-xs">
+                    No reviews registered for this product listing yet. Be the first to express your thoughts!
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                    {product.reviews.map(rev => (
+                      <div key={rev.id} className="p-5 rounded-xl bg-white/2 border border-white/5 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-sm uppercase border border-indigo-500/20 overflow-hidden">
+                            {rev.user_profile_pic ? (
+                              <img src={rev.user_profile_pic} alt={rev.user_name} className="w-full h-full object-cover" />
+                            ) : (
+                              rev.user_name.slice(0, 2)
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-200">{rev.user_name}</div>
+                            <div className="text-[10px] text-slate-500">
+                              Published: {rev.created_at ? new Date(rev.created_at).toLocaleDateString() : 'recent'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-amber-500 text-xs">
+                          {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                        </div>
+
+                        <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">{rev.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      </div>
+
+    </div>
   );
 };
