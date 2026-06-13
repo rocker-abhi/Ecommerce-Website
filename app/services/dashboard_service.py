@@ -1,12 +1,12 @@
-from app.repository.inventory_repository import InventoryRepository
+from app.repository.product_repository import ProductRepository
 
 
 class DashboardService:
     def __init__(self):
-        self.inventory_repository = InventoryRepository()
+        self.product_repository = ProductRepository()
 
     def get_seller_dashboard_data(self, user_id):
-        inventory_data = (
-            self.inventory_repository.get_inventory_corresponsding_to_userid(user_id)
+        product_data = (
+            self.product_repository.get_products_by_seller_id(user_id)
         )
-        return inventory_data
+        return product_data

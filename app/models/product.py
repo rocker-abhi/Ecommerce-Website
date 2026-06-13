@@ -1,7 +1,7 @@
 import uuid
 from decimal import Decimal
 from typing import List
-from sqlalchemy import ForeignKey, String, Numeric, Uuid
+from sqlalchemy import ForeignKey, String, Numeric, Uuid, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -26,6 +26,14 @@ class ProductModel(BaseModel):
         nullable=True
     )
 
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    sku: Mapped[str] = mapped_column(String(100), nullable=True)
+    stock: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+
     # Relationships
     category: Mapped["CategoryModel"] = relationship(
         "CategoryModel", back_populates="products"
@@ -34,8 +42,8 @@ class ProductModel(BaseModel):
         "SubCategoryModel", back_populates="products"
     )
 
-    inventory: Mapped["InventoryModel"] = relationship(
-        "InventoryModel", back_populates="product", uselist=False, cascade="all, delete-orphan"
+    seller: Mapped["UserModel"] = relationship(
+        "UserModel", back_populates="products"
     )
 
     cart_items: Mapped[List["CartItemModel"]] = relationship(

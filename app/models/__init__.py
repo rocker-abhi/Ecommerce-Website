@@ -6,7 +6,6 @@ from .cart_item import CartItemModel
 from .category import CategoryModel
 from .subcategory import SubCategoryModel
 from .group import GroupModel, group_permissions, user_groups
-from .inventory import InventoryModel
 from .order import OrderModel
 from .order_item import OrderItemModel
 from .payment import PaymentModel
@@ -30,7 +29,6 @@ __all__ = [
     "CategoryModel",
     "SubCategoryModel",
     "ProductModel",
-    "InventoryModel",
     "CartModel",
     "CartItemModel",
     "WishlistModel",

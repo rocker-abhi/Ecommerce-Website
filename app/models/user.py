@@ -91,8 +91,8 @@ class UserModel(BaseModel):
         "WishlistModel", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 
-    inventories: Mapped[List["InventoryModel"]] = relationship(
-        "InventoryModel", back_populates="user", cascade="all, delete-orphan"
+    products: Mapped[List["ProductModel"]] = relationship(
+        "ProductModel", back_populates="seller", cascade="all, delete-orphan"
     )
 
     @property

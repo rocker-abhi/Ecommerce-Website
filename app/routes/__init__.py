@@ -31,3 +31,9 @@ product_bp.add_url_rule(
     view_func=ProductView.as_view("add_product"),
     methods=["POST"],
 )
+product_bp.add_url_rule(
+    "/<uuid:product_id>",
+    view_func=ProductView.as_view("delete_product"),
+    methods=["DELETE", "PUT"],
+)
+
