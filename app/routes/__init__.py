@@ -1,7 +1,7 @@
 from flask import Blueprint
 
-from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token, update_profile, reset_password
-from app.routes.dashboardApi import SellerDashboard, HomepageDashboard
+from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token, update_profile, reset_password, list_users, toggle_user_status, delete_user
+from app.routes.dashboardApi import SellerDashboard, HomepageDashboard, AdminDashboard
 from app.routes.product_api import ProductView, ReviewView
 from app.routes.cartAPI import CartView
 from app.routes.wishlistAPI import WishlistView
@@ -27,6 +27,9 @@ auth_bp.add_url_rule("/refresh", view_func=refresh_token, methods=["POST"])
 auth_bp.add_url_rule("/me", view_func=auth_me, methods=["GET"])
 auth_bp.add_url_rule("/me", view_func=update_profile, methods=["PUT"])
 auth_bp.add_url_rule("/reset-password", view_func=reset_password, methods=["POST"])
+auth_bp.add_url_rule("/users", view_func=list_users, methods=["GET"])
+auth_bp.add_url_rule("/users/<uuid:user_id>", view_func=toggle_user_status, methods=["PUT"])
+auth_bp.add_url_rule("/users/<uuid:user_id>", view_func=delete_user, methods=["DELETE"])
 
 
 # adding dashboard route
@@ -35,6 +38,9 @@ dashboard_bp.add_url_rule(
 )
 dashboard_bp.add_url_rule(
     "/", view_func=HomepageDashboard.as_view("homepage_dashboard"), methods=["GET"]
+)
+dashboard_bp.add_url_rule(
+    "/admin", view_func=AdminDashboard.as_view("admin_dashboard"), methods=["GET"]
 )
 
 

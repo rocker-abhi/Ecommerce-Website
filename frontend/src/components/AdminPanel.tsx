@@ -6,26 +6,504 @@ interface AdminPanelProps {
   userEmail: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+  is_active: boolean;
+  is_admin: boolean;
+  userType: string;
+}
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  
+  .ap-root {
+    font-family: 'Inter', sans-serif;
+    background: #f8fafc;
+    min-height: calc(100vh - 64px);
+    display: flex;
+    color: #1e293b;
+    text-align: left;
+  }
+
+  /* Left Sidebar Navigation */
+  .ap-sidebar {
+    width: 260px;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    border-right: 1px solid #1e293b;
+  }
+
+  .ap-sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0 12px 12px;
+    border-b: 1px solid #1e293b;
+    margin-bottom: 8px;
+  }
+
+  .ap-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+  }
+
+  .ap-nav-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .ap-nav-btn.active {
+    color: #fff;
+    background: #6366f1;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  }
+
+  /* Content Area */
+  .ap-content {
+    flex-grow: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .ap-header {
+    margin-bottom: 28px;
+  }
+
+  .ap-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px;
+  }
+
+  .ap-header p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+  }
+
+  /* Stats Grid */
+  .ap-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .ap-stat-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ap-stat-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 4px;
+  }
+
+  .ap-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ap-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  /* Chart Card Styling */
+  .ap-chart-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    margin-bottom: 32px;
+  }
+
+  .ap-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .ap-chart-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ap-chart-tabs {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .ap-chart-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ap-chart-tab.active {
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* Table styling */
+  .ap-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    overflow: hidden;
+  }
+
+  .ap-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafbfc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ap-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .ap-table th {
+    background: #f8fafc;
+    padding: 12px 24px;
+    font-weight: 700;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+
+  .ap-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  .ap-table tr:hover {
+    background: #fafbfc;
+  }
+
+  .ap-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .ap-badge-active {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .ap-badge-suspended {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .ap-badge-admin {
+    background: #e0e7ff;
+    color: #4338ca;
+  }
+
+  .ap-badge-user {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .ap-action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ap-action-btn-suspend {
+    background: #fff;
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+  }
+
+  .ap-action-btn-suspend:hover {
+    background: #fef2f2;
+  }
+
+  .ap-action-btn-activate {
+    background: #10b981;
+    color: #fff;
+    border: none;
+  }
+
+  .ap-action-btn-activate:hover {
+    background: #059669;
+  }
+
+  .ap-action-btn-toggle-role {
+    background: #fff;
+    color: #6366f1;
+    border: 1px solid #c7d2fe;
+    margin-left: 8px;
+  }
+
+  .ap-action-btn-toggle-role:hover {
+    background: #e0e7ff;
+  }
+
+  /* Graph elements */
+  .ap-chart-svg {
+    width: 100%;
+    height: 300px;
+    overflow: visible;
+  }
+
+  .ap-chart-gridline {
+    stroke: #e2e8f0;
+    stroke-width: 1;
+    stroke-dasharray: 4,4;
+  }
+
+  .ap-chart-line {
+    fill: none;
+    stroke: #6366f1;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+  }
+
+  .ap-chart-area {
+    fill: url(#ap-chart-gradient);
+    opacity: 0.15;
+  }
+
+  .ap-chart-point {
+    fill: #6366f1;
+    stroke: #fff;
+    stroke-width: 2.5;
+    r: 6;
+    cursor: pointer;
+    transition: r 0.1s ease;
+  }
+
+  .ap-chart-point:hover {
+    r: 8;
+  }
+`;
+
+// Sales metrics mock for trends (Weekly, Monthly, Quarterly, Yearly)
+interface SalesDataPoint {
+  label: string;
+  value: number;
+}
+
+const SALES_TRENDS: Record<'weekly' | 'monthly' | 'quarterly' | 'yearly', SalesDataPoint[]> = {
+  weekly: [
+    { label: 'Mon', value: 1200 },
+    { label: 'Tue', value: 1800 },
+    { label: 'Wed', value: 1500 },
+    { label: 'Thu', value: 2400 },
+    { label: 'Fri', value: 2100 },
+    { label: 'Sat', value: 3200 },
+    { label: 'Sun', value: 2800 },
+  ],
+  monthly: [
+    { label: 'Jan', value: 12500 },
+    { label: 'Feb', value: 14200 },
+    { label: 'Mar', value: 16800 },
+    { label: 'Apr', value: 15100 },
+    { label: 'May', value: 19400 },
+    { label: 'Jun', value: 22800 },
+    { label: 'Jul', value: 25400 },
+    { label: 'Aug', value: 24100 },
+    { label: 'Sep', value: 28900 },
+    { label: 'Oct', value: 31200 },
+    { label: 'Nov', value: 35600 },
+    { label: 'Dec', value: 41200 },
+  ],
+  quarterly: [
+    { label: 'Q1', value: 43500 },
+    { label: 'Q2', value: 57300 },
+    { label: 'Q3', value: 78400 },
+    { label: 'Q4', value: 108000 },
+  ],
+  yearly: [
+    { label: '2023', value: 180000 },
+    { label: '2024', value: 224000 },
+    { label: '2025', value: 287000 },
+    { label: '2026', value: 345000 },
+  ]
+};
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) => {
+  const [activeView, setActiveView] = useState<'dashboard' | 'users'>('dashboard');
   const [metrics, setMetrics] = useState<any>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Users management state
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Chart state
+  const [chartRange, setChartRange] = useState<'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly');
+
+  // Edit user state
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editAge, setEditAge] = useState(0);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user account?")) return;
+    try {
+      const response = await apiClient.delete(`/auth/users/${userId}`);
+      if (response.data && response.data.success) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        alert("User deleted successfully.");
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete user');
+    }
+  };
+
+  const handleSaveEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSubmittingEdit(true);
+    try {
+      const response = await apiClient.put(`/auth/users/${editingUser.id}`, {
+        name: editName,
+        email: editEmail,
+        age: editAge
+      });
+      if (response.data && response.data.success) {
+        setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, name: editName, email: editEmail, age: editAge } : u));
+        setEditingUser(null);
+        alert("User details updated successfully.");
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update user details');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
 
   const fetchMetrics = async () => {
     setLoadingMetrics(true);
     setMetricsError(null);
     try {
-      const response = await apiClient.get('/dashboard/');
+      const response = await apiClient.get('/dashboard/admin');
       if (response.data && response.data.success) {
         setMetrics(response.data.data);
       } else {
         setMetricsError(response.data?.message || 'Failed to load metrics');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'An error occurred while fetching metrics';
-      setMetricsError(msg);
+      setMetricsError(err.response?.data?.message || err.message || 'Error occurred while loading dashboard metrics');
     } finally {
       setLoadingMetrics(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    setUsersError(null);
+    try {
+      const response = await apiClient.get('/auth/users');
+      if (response.data && response.data.success) {
+        setUsers(response.data.data || []);
+      } else {
+        setUsersError(response.data?.message || 'Failed to load registered users');
+      }
+    } catch (err: any) {
+      setUsersError(err.response?.data?.message || err.message || 'Error occurred while loading registered users');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleToggleUserRole = async (userId: string, currentIsAdmin: boolean) => {
+    try {
+      const response = await apiClient.put(`/auth/users/${userId}`, {
+        is_admin: !currentIsAdmin
+      });
+      if (response.data && response.data.success) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_admin: !currentIsAdmin, userType: !currentIsAdmin ? 'admin' : 'buyer' } : u));
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to toggle user role');
     }
   };
 
@@ -34,6 +512,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
       fetchMetrics();
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin && activeView === 'users') {
+      fetchUsers();
+    }
+  }, [isAdmin, activeView]);
 
   if (!isAdmin) {
     return (
@@ -45,18 +529,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
         </div>
         <h3 className="text-xl font-bold text-zinc-900">Admin Access Denied</h3>
         <p className="text-zinc-600 text-sm mt-2 leading-relaxed">
-          Your account does not have permission to access the administration panel. Please contact your system administrator or log in with an admin account.
+          Your account does not have permission to access the administration panel. Please contact your system administrator.
         </p>
-        <div className="bg-zinc-50 border border-zinc-200 rounded-md p-3.5 mt-5 text-[11px] font-mono text-zinc-500 text-left">
-          <div className="flex justify-between border-b border-zinc-200 pb-1.5 mb-1.5">
-            <span>Required Permission:</span>
-            <span className="font-bold text-red-700">dashboard:view</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Your Account:</span>
-            <span className="truncate max-w-[180px]">{userEmail}</span>
-          </div>
-        </div>
         <button
           onClick={() => window.location.href = '/?tab=buyer'}
           className="w-full mt-6 amazon-btn-primary py-2 px-4 text-xs font-semibold"
@@ -67,260 +541,352 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isAdmin, userEmail }) =>
     );
   }
 
-  if (loadingMetrics && !metrics) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-zinc-500 text-xs font-semibold mt-4">Connecting to dashboard services...</span>
-      </div>
-    );
-  }
-
-  if (metricsError) {
-    return (
-      <div className="max-w-lg mx-auto my-16 p-8 bg-white border border-red-200 rounded-lg shadow-sm text-center">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-bold text-zinc-950">Failed to Load Admin Metrics</h3>
-        <p className="text-zinc-600 text-xs mt-1 leading-normal">{metricsError}</p>
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => window.location.href = '/?tab=buyer'}
-            className="flex-1 amazon-btn-secondary py-2 text-xs font-semibold"
-          >
-            Back to Store
-          </button>
-          <button
-            onClick={fetchMetrics}
-            className="flex-1 amazon-btn-primary py-2 text-xs font-semibold"
-          >
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Default metrics data mapping if empty
+  // Map metrics
   const {
     total_products = 0,
     total_users = 0,
     total_orders = 0,
     total_revenue = 0,
-    recent_orders = [],
-    low_stock_products = []
+    trends = null
   } = metrics || {};
 
+  // Build SVG coordinates based on selected range
+  const currentPoints = (trends && trends[chartRange]) || SALES_TRENDS[chartRange];
+  const maxVal = Math.max(...currentPoints.map((p: any) => p.value)) * 1.15 || 1000;
+  
+  const width = 800;
+  const height = 220;
+  const paddingX = 60;
+  const paddingY = 20;
+
+  const pointsCoordinates = currentPoints.map((dp: any, idx: number) => {
+    const x = paddingX + (idx / (currentPoints.length - 1)) * (width - 2 * paddingX);
+    const y = height - paddingY - (dp.value / maxVal) * (height - 2 * paddingY);
+    return { x, y, label: dp.label, value: dp.value };
+  });
+
+  const linePath = pointsCoordinates.reduce((path: string, p: any, idx: number) => {
+    return path + `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y} `;
+  }, '');
+
+  const areaPath = linePath + `L ${pointsCoordinates[pointsCoordinates.length - 1].x} ${height - paddingY} L ${pointsCoordinates[0].x} ${height - paddingY} Z`;
+
   return (
-    <div className="max-w-[1500px] mx-auto px-4 mt-6 animate-fade-in text-left">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-zinc-950 tracking-tight">Admin Console Dashboard</h2>
-          <p className="text-xs text-zinc-500 mt-1">Real-time statistics, recent sales orders, and inventory monitoring.</p>
-        </div>
-        <button
-          onClick={fetchMetrics}
-          disabled={loadingMetrics}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 rounded shadow-2xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className={`w-3.5 h-3.5 ${loadingMetrics ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.213 6H16" />
-          </svg>
-          Refresh Data
-        </button>
-      </div>
-
-      {/* Analytics Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-6">
-        {/* Card 1: Revenue */}
-        <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Total Revenue</span>
-              <span className="text-2xl font-bold text-zinc-950 mt-1.5">${total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="p-2 bg-emerald-50 rounded-sm text-emerald-600 border border-emerald-100">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-[10px] text-emerald-600 font-semibold mt-2.5 flex items-center gap-1">
-            <span>★ High volume sales</span>
+    <>
+      <style>{css}</style>
+      <div className="ap-root">
+        {/* Left Sidebar Menu */}
+        <div className="ap-sidebar">
+          <div className="ap-sidebar-title">Admin Console</div>
+          <button
+            onClick={() => setActiveView('dashboard')}
+            className={`ap-nav-btn ${activeView === 'dashboard' ? 'active' : ''}`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Dashboard Analytics
+          </button>
+          <button
+            onClick={() => setActiveView('users')}
+            className={`ap-nav-btn ${activeView === 'users' ? 'active' : ''}`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            User Management
+          </button>
+          
+          <div style={{ marginTop: 'auto', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Connected Identity</div>
+            <div style={{ fontSize: '12.5px', color: '#f8fafc', fontWeight: '600', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>
           </div>
         </div>
 
-        {/* Card 2: Orders */}
-        <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Total Orders</span>
-              <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_orders}</span>
-            </div>
-            <div className="p-2 bg-amber-50 rounded-sm text-amber-600 border border-amber-100">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
-            Customer purchase orders
-          </div>
-        </div>
-
-        {/* Card 3: Products */}
-        <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Active Products</span>
-              <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_products}</span>
-            </div>
-            <div className="p-2 bg-sky-50 rounded-sm text-sky-600 border border-sky-100">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
-            Available catalog listings
-          </div>
-        </div>
-
-        {/* Card 4: Users */}
-        <div className="bg-white p-5 border border-zinc-200 rounded-sm shadow-2xs relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-violet-500"></div>
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Registered Users</span>
-              <span className="text-2xl font-bold text-zinc-950 mt-1.5">{total_users}</span>
-            </div>
-            <div className="p-2 bg-violet-50 rounded-sm text-violet-600 border border-violet-100">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-          </div>
-          <div className="text-[10px] text-zinc-500 font-medium mt-2.5">
-            Active buyers and sellers
-          </div>
-        </div>
-      </div>
-
-      {/* Dashboard Dual Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Recent Orders Panel */}
-        <div className="bg-white border border-zinc-200 rounded-sm shadow-2xs lg:col-span-3 flex flex-col overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50 flex justify-between items-center">
-            <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
-              <svg className="w-4.5 h-4.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              Recent Sales Orders
-            </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-200 text-zinc-700 rounded-full">Latest 5</span>
-          </div>
-
-          <div className="flex-1 overflow-x-auto">
-            {recent_orders.length === 0 ? (
-              <div className="text-center py-16 text-zinc-400 text-xs">
-                No orders have been recorded in the database.
+        {/* Content Pane */}
+        <div className="ap-content">
+          {activeView === 'dashboard' && (
+            <div>
+              <div className="ap-header">
+                <h2>Analytics Dashboard Overview</h2>
+                <p>Website performance metrics and customer purchasing analytics trends.</p>
               </div>
-            ) : (
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-zinc-50 text-zinc-500 font-bold border-b border-zinc-200">
-                    <th className="px-5 py-3">Order Email / ID</th>
-                    <th className="px-4 py-3">Created Date</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-5 py-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recent_orders.map((order: any) => {
-                    let statusClass = 'bg-zinc-100 text-zinc-800';
-                    const statusVal = (order.status || '').toLowerCase();
-                    if (statusVal.includes('completed') || statusVal.includes('paid') || statusVal.includes('delivered') || statusVal === 'active') {
-                      statusClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-                    } else if (statusVal.includes('pending') || statusVal.includes('processing')) {
-                      statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
-                    } else if (statusVal.includes('cancel') || statusVal.includes('fail') || statusVal.includes('refund')) {
-                      statusClass = 'bg-red-50 text-red-800 border-red-200';
-                    }
 
-                    return (
-                      <tr key={order.id} className="border-b border-zinc-100 hover:bg-zinc-50/50 transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="font-bold text-zinc-900 truncate max-w-[200px]">{order.user_email}</div>
-                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{order.id}</div>
-                        </td>
-                        <td className="px-4 py-3.5 text-zinc-600 whitespace-nowrap">
-                          {order.created_at ? new Date(order.created_at).toLocaleString() : 'N/A'}
-                        </td>
-                        <td className="px-4 py-3.5 font-bold text-zinc-900 whitespace-nowrap">
-                          ${order.total_amount.toFixed(2)}
-                        </td>
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold border ${statusClass}`}>
-                            {order.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        {/* Low Stock Alerts Panel */}
-        <div className="bg-white border border-zinc-200 rounded-sm shadow-2xs lg:col-span-2 flex flex-col overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-200 bg-zinc-50 flex justify-between items-center">
-            <h3 className="font-bold text-sm text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
-              <svg className="w-4.5 h-4.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Low Stock Alerts
-            </h3>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-full">Critically Low</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto max-h-[360px]">
-            {low_stock_products.length === 0 ? (
-              <div className="text-center py-16 text-zinc-400 text-xs">
-                All inventory levels are healthy.
-              </div>
-            ) : (
-              <div className="divide-y divide-zinc-100">
-                {low_stock_products.map((product: any) => (
-                  <div key={product.id} className="p-4 flex justify-between items-center hover:bg-zinc-50/50 transition-colors">
-                    <div className="min-w-0 pr-3">
-                      <h4 className="font-bold text-xs text-zinc-900 truncate">{product.name}</h4>
-                      <div className="flex items-center gap-2 mt-1 text-[10px]">
-                        <span className="font-mono text-zinc-400">SKU: {product.sku}</span>
-                        <span className="text-zinc-300">|</span>
-                        <span className="font-bold text-[#b12704]">${product.price.toFixed(2)}</span>
+              {loadingMetrics && !metrics ? (
+                <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                  <div className="ap-stat-icon animate-spin" style={{ margin: '0 auto 12px' }}>🔄</div>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>Refreshing metrics...</span>
+                </div>
+              ) : metricsError ? (
+                <div style={{ padding: '24px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#991b1b', fontSize: '13px' }}>
+                  ⚠ Failed to update metrics: {metricsError}
+                </div>
+              ) : (
+                <>
+                  {/* KPI Cards Grid */}
+                  <div className="ap-stats-grid">
+                    <div className="ap-stat-card">
+                      <div>
+                        <div className="ap-stat-label">Total Revenue</div>
+                        <div className="ap-stat-val">${total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                       </div>
+                      <div className="ap-stat-icon" style={{ background: '#ecfdf5', color: '#059669' }}>💵</div>
                     </div>
-                    
-                    <div className="text-right shrink-0">
-                      <span className="inline-block px-2 py-1 rounded bg-red-50 text-red-700 font-bold border border-red-100 text-[10px] min-w-[50px] text-center">
-                        {product.quantity} left
-                      </span>
+                    <div className="ap-stat-card">
+                      <div>
+                        <div className="ap-stat-label">Registered Users</div>
+                        <div className="ap-stat-val">{total_users}</div>
+                      </div>
+                      <div className="ap-stat-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}>👥</div>
+                    </div>
+                    <div className="ap-stat-card">
+                      <div>
+                        <div className="ap-stat-label">Total Product Sales</div>
+                        <div className="ap-stat-val">{total_orders}</div>
+                      </div>
+                      <div className="ap-stat-icon" style={{ background: '#fffbeb', color: '#d97706' }}>📦</div>
+                    </div>
+                    <div className="ap-stat-card">
+                      <div>
+                        <div className="ap-stat-label font-bold">Total Products</div>
+                        <div className="ap-stat-val">{total_products}</div>
+                      </div>
+                      <div className="ap-stat-icon" style={{ background: '#f0f9ff', color: '#0284c7' }}>🛍️</div>
                     </div>
                   </div>
-                ))}
+
+                  {/* Interactive Chart Container */}
+                  <div className="ap-chart-card">
+                    <div className="ap-chart-header">
+                      <span className="ap-chart-title">Website Sales Trends</span>
+                      <div className="ap-chart-tabs">
+                        {(['weekly', 'monthly', 'quarterly', 'yearly'] as const).map(range => (
+                          <button
+                            key={range}
+                            onClick={() => setChartRange(range)}
+                            className={`ap-chart-tab ${chartRange === range ? 'active' : ''}`}
+                          >
+                            {range.charAt(0).toUpperCase() + range.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                      <svg className="ap-chart-svg" viewBox={`0 0 ${width} ${height}`}>
+                        <defs>
+                          <linearGradient id="ap-chart-gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Grid lines */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                          const yVal = paddingY + ratio * (height - 2 * paddingY);
+                          return (
+                            <line
+                              key={idx}
+                              x1={paddingX}
+                              y1={yVal}
+                              x2={width - paddingX}
+                              y2={yVal}
+                              className="ap-chart-gridline"
+                            />
+                          );
+                        })}
+
+                        {/* Area Fill */}
+                        <path d={areaPath} className="ap-chart-area" />
+
+                        {/* Trend Line */}
+                        <path d={linePath} className="ap-chart-line" />
+
+                        {/* Chart markers / points */}
+                        {pointsCoordinates.map((pt: any, idx: number) => (
+                          <g key={idx}>
+                            <circle cx={pt.x} cy={pt.y} className="ap-chart-point">
+                              <title>{pt.label}: ${pt.value.toLocaleString()}</title>
+                            </circle>
+                            <text
+                              x={pt.x}
+                              y={height - 5}
+                              textAnchor="middle"
+                              style={{ fontSize: '10px', fill: '#64748b', fontWeight: 'bold' }}
+                            >
+                              {pt.label}
+                            </text>
+                            <text
+                              x={pt.x}
+                              y={pt.y - 12}
+                              textAnchor="middle"
+                              style={{ fontSize: '10px', fill: '#0f172a', fontWeight: 'bold' }}
+                            >
+                              ${pt.value >= 1000 ? `${(pt.value / 1000).toFixed(1)}k` : pt.value}
+                            </text>
+                          </g>
+                        ))}
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {activeView === 'users' && (
+            <div>
+              <div className="ap-header">
+                <h2>User Management Console</h2>
+                <p>Monitor customer profile registrations, manage suspension status, and assign administrator privileges.</p>
               </div>
-            )}
-          </div>
+
+              {loadingUsers && users.length === 0 ? (
+                <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                  <div className="ap-stat-icon animate-spin" style={{ margin: '0 auto 12px' }}>🔄</div>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>Retrieving account logs...</span>
+                </div>
+              ) : usersError ? (
+                <div style={{ padding: '24px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#991b1b', fontSize: '13px' }}>
+                  ⚠ Failed to load users list: {usersError}
+                </div>
+              ) : (
+                <div className="ap-card">
+                  <div className="ap-card-header">
+                    <span className="ap-card-title">Registered Accounts Log</span>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#f1f5f9', padding: '3px 10px', borderRadius: '20px', color: '#475569' }}>
+                      {users.length} accounts found
+                    </span>
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="ap-table">
+                      <thead>
+                        <tr>
+                          <th>User Info</th>
+                          <th>Age</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map(u => (
+                          <tr key={u.id}>
+                            <td>
+                              <div style={{ fontWeight: '700', color: '#0f172a' }}>{u.name}</div>
+                              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>{u.email}</div>
+                              <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '1px', fontFamily: 'monospace' }}>ID: {u.id}</div>
+                            </td>
+                            <td>{u.age} yrs</td>
+                            <td>
+                              <span className={`ap-badge ${u.is_admin ? 'ap-badge-admin' : 'ap-badge-user'}`}>
+                                {u.userType}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`ap-badge ${u.is_active ? 'ap-badge-active' : 'ap-badge-suspended'}`}>
+                                {u.is_active ? 'Active' : 'Suspended'}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingUser(u);
+                                  setEditName(u.name);
+                                  setEditEmail(u.email);
+                                  setEditAge(u.age);
+                                }}
+                                className="ap-action-btn"
+                                style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleToggleUserRole(u.id, u.is_admin)}
+                                className="ap-action-btn ap-action-btn-toggle-role"
+                                style={{ marginLeft: '8px' }}
+                              >
+                                {u.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="ap-action-btn ap-action-btn-suspend"
+                                style={{ marginLeft: '8px' }}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Edit User Modal Overlay */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-zinc-200 overflow-hidden text-left p-6">
+            <h3 className="text-lg font-bold text-zinc-950 mb-4">Edit User Account</h3>
+            <form onSubmit={handleSaveEditUser}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '6px' }}>Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                />
+              </div>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '6px' }}>Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                />
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '6px' }}>Age</label>
+                <input
+                  type="number"
+                  required
+                  value={editAge}
+                  onChange={(e) => setEditAge(Number(e.target.value))}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="ap-action-btn"
+                  style={{ border: '1px solid #cbd5e1', background: '#fff', color: '#475569' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="ap-action-btn"
+                  style={{ background: '#6366f1', color: '#fff', border: 'none' }}
+                >
+                  {submittingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

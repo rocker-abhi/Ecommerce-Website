@@ -179,3 +179,91 @@ def reset_password():
         "success": True,
         "message": "Password reset successfully"
     }))
+
+
+@jwt_required
+def list_users():
+    requesting_user = auth_service.get_user_by_id(g.user_id)
+    if not requesting_user or not requesting_user.is_admin:
+        return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
+
+    from app.models.user import UserModel
+    users = g.db.query(UserModel).all()
+    serialized = []
+    for u in users:
+        serialized.append({
+            "id": str(u.id),
+            "name": u.name,
+            "email": u.email,
+            "age": u.age,
+            "is_active": u.is_active,
+            "is_admin": u.is_admin,
+            "userType": u.userType
+        })
+    return make_response(jsonify({
+        "success": True,
+        "message": "Users retrieved successfully",
+        "data": serialized
+    }))
+
+
+@jwt_required
+def toggle_user_status(user_id):
+    requesting_user = auth_service.get_user_by_id(g.user_id)
+    if not requesting_user or not requesting_user.is_admin:
+        return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
+
+    from app.models.user import UserModel
+    user = g.db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        return make_response(jsonify({"success": False, "message": "User not found"}), 404)
+
+    data = request.get_json() or {}
+    if "is_active" in data:
+        user.is_active = bool(data["is_active"])
+    if "is_admin" in data:
+        user.is_admin = bool(data["is_admin"])
+    if "name" in data:
+        user.name = str(data["name"])
+    if "email" in data:
+        user.email = str(data["email"])
+    if "age" in data:
+        user.age = int(data["age"])
+
+    g.db.commit()
+    return make_response(jsonify({
+        "success": True,
+        "message": "User status updated successfully",
+        "data": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "age": user.age,
+            "is_active": user.is_active,
+            "is_admin": user.is_admin,
+            "userType": user.userType
+        }
+    }))
+
+
+@jwt_required
+def delete_user(user_id):
+    requesting_user = auth_service.get_user_by_id(g.user_id)
+    if not requesting_user or not requesting_user.is_admin:
+        return make_response(jsonify({"success": False, "message": "Admin privileges required"}), 403)
+
+    from app.models.user import UserModel
+    user = g.db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        return make_response(jsonify({"success": False, "message": "User not found"}), 404)
+
+    if user.id == g.user_id:
+        return make_response(jsonify({"success": False, "message": "Cannot delete your own admin account"}), 400)
+
+    g.db.delete(user)
+    g.db.commit()
+    return make_response(jsonify({
+        "success": True,
+        "message": "User deleted successfully"
+    }))
+
