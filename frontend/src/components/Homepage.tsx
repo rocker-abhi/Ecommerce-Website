@@ -285,12 +285,12 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
               background: 'linear-gradient(135deg, #6366f1, #a855f7)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 18, boxShadow: '0 0 20px rgba(99,102,241,0.4)'
-            }}>🛍️</div>
+            }}>🚀</div>
             <span style={{
               fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 20,
               background: 'linear-gradient(135deg, #818cf8, #c084fc)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-            }}>ShopVerse</span>
+            }}>Appolo</span>
           </div>
 
           {/* Search */}

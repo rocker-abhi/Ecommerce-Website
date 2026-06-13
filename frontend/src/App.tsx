@@ -157,18 +157,17 @@ function App() {
       }}>
         {/* Animated Logo */}
         <div style={{
-          width: 56,
-          height: 56,
-          borderRadius: 16,
+          width: 48,
+          height: 48,
+          borderRadius: 12,
           background: 'linear-gradient(135deg, #6366f1, #a855f7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 28,
-          boxShadow: '0 0 40px rgba(99,102,241,0.4)',
-          animation: 'pulse-glow 2s ease-in-out infinite'
+          fontSize: 22,
+          boxShadow: '0 0 24px rgba(99,102,241,0.3)'
         }}>
-          🛍️
+          🚀
         </div>
         <div style={{
           display: 'flex',
@@ -184,7 +183,7 @@ function App() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            ShopVerse
+            Appolo
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{

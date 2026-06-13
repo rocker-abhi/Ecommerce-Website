@@ -230,7 +230,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
               )}
               <div className="flex justify-between">
                 <span className="text-slate-500">Merchant:</span>
-                <span className="font-semibold text-indigo-400">{product.seller?.name || 'Authorized ShopVerse Vendor'}</span>
+                <span className="font-semibold text-indigo-400">{product.seller?.name || 'Authorized Appolo Vendor'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Warranty:</span>
@@ -441,7 +441,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                   )}
                   <tr className="hover:bg-white/[0.01]">
                     <td className="p-4 font-bold text-slate-300">Authorized Merchant</td>
-                    <td className="p-4">{product.seller?.name || 'ShopVerse Merchant'}</td>
+                    <td className="p-4">{product.seller?.name || 'Appolo Merchant'}</td>
                   </tr>
                   <tr className="hover:bg-white/[0.01]">
                     <td className="p-4 font-bold text-slate-300">Warranty Term</td>

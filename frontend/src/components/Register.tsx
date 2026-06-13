@@ -103,12 +103,12 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onToggleView }) =
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24, margin: '0 auto 14px',
             boxShadow: '0 0 36px rgba(99,102,241,0.35)'
-          }}>🛍️</div>
+          }}>🚀</div>
           <h1 style={{
             fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, margin: '0 0 4px',
             background: 'linear-gradient(135deg, #818cf8, #c084fc)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-          }}>ShopVerse</h1>
+          }}>Appolo</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>Create your account</p>
         </div>
 

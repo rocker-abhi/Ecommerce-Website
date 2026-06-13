@@ -250,7 +250,7 @@ export const SellerPanel: React.FC<SellerPanelProps> = ({ isSeller, onRefreshBuy
         <div>
           <div className="pb-6 mb-6 border-b border-white/5">
             <span className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">Merchant Workspace</span>
-            <h2 className="text-xl font-extrabold text-slate-100 tracking-tight mt-1">ShopVerse Hub</h2>
+            <h2 className="text-xl font-extrabold text-slate-100 tracking-tight mt-1">Appolo Hub</h2>
           </div>
 
           <nav className="space-y-1">

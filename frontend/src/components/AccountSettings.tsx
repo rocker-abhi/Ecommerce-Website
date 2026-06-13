@@ -234,7 +234,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ onBackToStore 
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Back to ShopVerse
+        Back to Appolo
       </button>
 
       {/* Main Grid Layout */}

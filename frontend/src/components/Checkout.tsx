@@ -98,7 +98,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ cart, onOrderPlaced, onCance
     try {
       const r = await apiClient.post('/order', { address_id: selectedAddressId });
       if (r.data?.success) {
-        showToast('success', 'Order placed! 🎉', 'Thank you for shopping with ShopVerse.');
+        showToast('success', 'Order placed! 🎉', 'Thank you for shopping with Appolo.');
         onOrderPlaced();
       } else {
         showToast('error', 'Order failed', r.data.message || 'Failed to place order.');
