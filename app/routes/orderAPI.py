@@ -1,13 +1,15 @@
+import uuid
 from decimal import Decimal
 from flask import g, jsonify, make_response, request
 from flask.views import MethodView
 from sqlalchemy.orm.attributes import flag_modified
 from app.middleware.jwt_middleware import jwt_required
 from app.models.cart import CartModel
+from app.models.payment import PaymentModel
 from app.models.product import ProductModel
 from app.models.order import OrderModel
 from app.models.order_item import OrderItemModel
-from app.models.enums.database_enums import OrderStatus
+from app.models.enums.database_enums import OrderStatus, PaymentStatus
 
 class OrderAPI(MethodView):
     @jwt_required
@@ -15,6 +17,7 @@ class OrderAPI(MethodView):
         user_id = g.user_id
         body = request.get_json() or {}
         address_id = body.get("address_id")
+        payment_method = body.get("payment_method", "COD")  # default Cash on Delivery
         
         if not address_id:
             return make_response(jsonify({
@@ -40,7 +43,7 @@ class OrderAPI(MethodView):
             if not product_id:
                 continue
                 
-            product = g.db.query(ProductModel).filter(ProductModel.id == product_id).first()
+            product = g.db.query(ProductModel).filter(ProductModel.id == product_id).with_for_update().first()
             if not product:
                 return make_response(jsonify({
                     "success": False,
@@ -73,7 +76,7 @@ class OrderAPI(MethodView):
         order = OrderModel(
             user_id=user_id,
             total_amount=total_amount,
-            status=OrderStatus.PENDING
+            status=OrderStatus.PAID
         )
         
         g.db.add(order)
@@ -84,7 +87,17 @@ class OrderAPI(MethodView):
             order_item.order_id = order.id
             g.db.add(order_item)
             
-        # 4. Clear User's Cart
+        # 4. Record payment as SUCCESS
+        payment = PaymentModel(
+            order_id=order.id,
+            amount=total_amount,
+            payment_method=payment_method,
+            status=PaymentStatus.SUCCESS,
+            transaction_id=f"TXN-{uuid.uuid4().hex[:16].upper()}"
+        )
+        g.db.add(payment)
+
+        # 5. Clear User's Cart
         cart.items = []
         flag_modified(cart, "items")
         g.db.add(cart)
@@ -98,6 +111,8 @@ class OrderAPI(MethodView):
             "data": {
                 "id": str(order.id),
                 "total_amount": float(order.total_amount),
-                "status": order.status.name
+                "status": order.status.value,
+                "payment_status": payment.status.value,
+                "transaction_id": payment.transaction_id
             }
         }), 201)

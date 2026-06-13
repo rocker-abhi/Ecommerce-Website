@@ -78,7 +78,7 @@ export const SellerPanel: React.FC<SellerPanelProps> = ({
             image: productObj.image_url || productObj.image || item.image || 'https://picsum.photos/id/120/400/300',
             description: productObj.description || item.description || '',
             sku: item.sku || productObj.sku || `SKU-EL-${(productObj.id || item.id) * 13 + 104}`,
-            stock: item.quantity !== undefined ? item.quantity : (productObj.stock !== undefined ? productObj.stock : (item.stock !== undefined ? item.stock : 25))
+            stock: productObj.stock !== undefined ? productObj.stock : (item.stock !== undefined ? item.stock : 0)
           };
         });
 
@@ -93,7 +93,8 @@ export const SellerPanel: React.FC<SellerPanelProps> = ({
           .filter((p: Product) => !deletedIds.includes(p.id))
           .map((p: Product) => {
             if (editedProducts[p.id]) {
-              return { ...p, ...editedProducts[p.id] };
+              // Always use the live stock from the API — inventory is managed server-side
+              return { ...p, ...editedProducts[p.id], stock: p.stock };
             }
             return p;
           });
