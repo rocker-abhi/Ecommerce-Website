@@ -97,6 +97,13 @@ dmypy.json
 *.pem
 *.key
 
+# Uploads - ignore uploaded product content but keep folder structure
+uploads/**/*
+!uploads/
+!uploads/products/
+!uploads/.gitkeep
+!uploads/products/.gitkeep
+
 __pycache__/
 *.pyc
 *.pyo
