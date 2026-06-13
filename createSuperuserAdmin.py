@@ -24,26 +24,15 @@ if sys.stdout.encoding != 'utf-8':
 
 
 def load_environment():
-    """Load environment variables from .env file."""
-    env = os.getenv("ENV", "development").lower()
-
-    env_map = {
-        "development": ".env.dev",
-        "production": ".env.prod",
-        "staging": ".env.stage",
-    }
-
-    if env not in env_map:
-        print(f"Error: Unknown environment '{env}'")
-        sys.exit(1)
-
-    env_file = Path(__file__).parent / env_map[env]
+    """Load environment variables from .env.dev file."""
+    env_file = Path(__file__).parent / ".env.dev"
     if not env_file.exists():
         print(f"Error: Environment file not found: {env_file}")
         sys.exit(1)
 
     dotenv.load_dotenv(str(env_file))
     print(f"✓ Loaded environment from: {env_file}")
+
 
 
 def create_superuser(email, password):

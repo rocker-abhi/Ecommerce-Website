@@ -1,14 +1,5 @@
-from app.config.EnvironmentConfig import (
-    DevelopmentConfig,
-    ProductionConfig,
-    StagingConfig,
-)
+from app.config.EnvironmentConfig import DevelopmentConfig
 
-CONFIG_MAP = {
-    "development": DevelopmentConfig,
-    "staging": StagingConfig,
-    "production": ProductionConfig,
-}
+def get_config(env=None):
+    return DevelopmentConfig
 
-def get_config(env):
-    return CONFIG_MAP[env]

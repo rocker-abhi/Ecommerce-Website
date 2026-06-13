@@ -13,20 +13,8 @@ configure_logger("INFO")
 register_exception_handlers(app)
 
 
-current_dev_environment = "development" # setting the current development environment
-app.config['current_env'] = current_dev_environment
-
-if current_dev_environment == "development":
-    # loading development environment
-    dotenv.load_dotenv(".env.dev")
-elif current_dev_environment == "production":
-    # loading production environment
-    dotenv.load_dotenv(".env.prod")
-elif current_dev_environment == "staging":
-    # loading staging environment
-    dotenv.load_dotenv(".env.stage")
-else:
-    raise RuntimeError(f"Unknown environment {current_dev_environment}")
+app.config['current_env'] = "development"
+dotenv.load_dotenv(".env.dev")
 
 from app.config import get_config
 from app.utils.database import DatabaseHelper
@@ -40,7 +28,7 @@ def serve_uploaded_file(filename):
 
 
 if __name__ == "__main__":
-    current_env_config = get_config(current_dev_environment) # getting the configuration of the current environment
+    current_env_config = get_config() # getting the configuration of the current environment
 
     # Initialize shared database instance (called once at startup)
     DatabaseHelper.init_database(current_env_config.DATABASE_URI)
@@ -54,7 +42,7 @@ if __name__ == "__main__":
     app.register_blueprint(address_bp)
     app.register_blueprint(order_bp)
 
-    if current_dev_environment == 'development':
+    if app.config.get('current_env') == 'development':
         # if environment is development then show all the configuration values in the console
         print(current_env_config.HOST)
         print(current_env_config.PORT)

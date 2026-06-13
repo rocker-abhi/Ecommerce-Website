@@ -105,19 +105,8 @@ PRODUCT_CATEGORIES = {
 
 
 def load_environment():
-    """Load environment variables from .env file."""
-    env = os.getenv("ENV", "development").lower()
-    env_map = {
-        "development": ".env.dev",
-        "production": ".env.prod",
-        "staging": ".env.stage",
-    }
-
-    if env not in env_map:
-        print(f"Error: Unknown environment '{env}'")
-        sys.exit(1)
-
-    env_file = Path(__file__).parent / env_map[env]
+    """Load environment variables from .env.dev file."""
+    env_file = Path(__file__).parent / ".env.dev"
     if not env_file.exists():
         print(f"Error: Environment file not found: {env_file}")
         sys.exit(1)
@@ -158,9 +147,9 @@ def run_migrations():
     """Run Alembic migrations to recreate all database tables."""
     print("\n--- Running Alembic Migrations ---")
     python_exec = get_python_executable()
-    print(f"Executing: {python_exec} alembic_runner.py upgrade head")
+    print(f"Executing: {python_exec} -m alembic upgrade head")
     result = subprocess.run(
-        [python_exec, "alembic_runner.py", "upgrade", "head"],
+        [python_exec, "-m", "alembic", "upgrade", "head"],
         capture_output=True,
         text=True
     )
@@ -178,9 +167,9 @@ def create_superuser_admin():
     """Call createSuperuserAdmin script to register the superuser."""
     print("\n--- Creating Superuser Admin ---")
     python_exec = get_python_executable()
-    print(f"Executing: {python_exec} createSuperuserAdmin.py abhiokoundal1019@gmail.com admin@123")
+    print(f"Executing: {python_exec} createSuperuserAdmin.py abhikoundal1019@gmail.com admin@123")
     result = subprocess.run(
-        [python_exec, "createSuperuserAdmin.py", "abhiokoundal1019@gmail.com", "admin@123"],
+        [python_exec, "createSuperuserAdmin.py", "abhikoundal1019@gmail.com", "admin@123"],
         capture_output=True,
         text=True
     )
@@ -223,8 +212,8 @@ def seed_database():
 
     now = datetime.now(timezone.utc)
 
-    # Wrap the seeding process in a transaction
-    with engine.begin() as conn:
+    # Verify tables exist
+    with engine.connect() as conn:
         print("\nChecking if required tables exist...")
         try:
             conn.execute(text("SELECT 1 FROM permissions LIMIT 1"))
@@ -233,14 +222,13 @@ def seed_database():
             conn.execute(text("SELECT 1 FROM categories LIMIT 1"))
             conn.execute(text("SELECT 1 FROM subcategories LIMIT 1"))
             conn.execute(text("SELECT 1 FROM products LIMIT 1"))
-            conn.execute(text("SELECT 1 FROM inventory LIMIT 1"))
         except Exception as e:
             print(f"❌ Error: Required tables do not exist in the database: {e}")
             sys.exit(1)
-
         print("✓ Necessary tables found.")
 
-        # 3. Seed Permissions
+    # 3. Seed Permissions, Groups, and Group-Permission Mappings
+    with engine.begin() as conn:
         print("\n--- Seeding Permissions ---")
         permission_name_to_id = {}
         for perm_name in ALL_PERMISSIONS:
@@ -263,7 +251,6 @@ def seed_database():
         
         print(f"✓ Completed seeding permissions. Added {len(ALL_PERMISSIONS)} permissions.")
 
-        # 4. Seed Groups
         print("\n--- Seeding Groups ---")
         group_name_to_id = {}
         for group_name in ROLE_PERMISSIONS.keys():
@@ -286,7 +273,6 @@ def seed_database():
 
         print(f"✓ Completed seeding groups. Added {len(ROLE_PERMISSIONS)} groups.")
 
-        # 5. Seed Group-Permission Mappings
         print("\n--- Seeding Group-Permission Mappings ---")
         for group_name, permissions in ROLE_PERMISSIONS.items():
             group_id = group_name_to_id[group_name]
@@ -307,7 +293,18 @@ def seed_database():
 
             print(f"✓ Linked {mapped_count} permissions to group '{group_name}'.")
 
-        # 6. Seed Categories and Subcategories
+    # 4. Create Superuser Admin (so the user exists before seeding products)
+    create_superuser_admin()
+
+    # 5. Seed Categories, Subcategories, and Products
+    with engine.begin() as conn:
+        # Fetch the admin user id
+        admin_row = conn.execute(text("SELECT id FROM users WHERE email = :email"), {"email": "abhikoundal1019@gmail.com"}).first()
+        if not admin_row:
+            print("❌ Error: Failed to find superuser admin in database after creation!")
+            sys.exit(1)
+        admin_user_id = admin_row[0]
+
         print("\n--- Seeding Categories and Subcategories ---")
         category_name_to_id = {}
         subcategory_name_to_id = {}
@@ -351,8 +348,7 @@ def seed_database():
 
         print(f"✓ Completed seeding categories and subcategories.")
 
-        # 7. Seed Products and Inventories
-        print("\n--- Seeding Products and Inventories ---")
+        print("\n--- Seeding Products ---")
         product_count = 0
         for parent_name, subcats in PRODUCT_CATEGORIES.items():
             parent_id = category_name_to_id[parent_name]
@@ -366,12 +362,14 @@ def seed_database():
                 product_desc = f"High quality {sub_name.lower()} from the {parent_name.lower()} collection."
                 price = round(random.uniform(9.99, 999.99), 2)
                 mock_image = f"https://example.com/images/{parent_name.lower().replace(' ', '_')}_{sub_name.lower().replace(' ', '_')}.jpg"
+                sku = f"SKU-{parent_name[:3].upper()}-{sub_name[:3].upper()}-{random.randint(1000, 9999)}"
+                quantity = random.randint(10, 100)
 
-                print(f"SQL: Inserting product '{product_name}' under '{parent_name} -> {sub_name}'")
+                print(f"SQL: Inserting product '{product_name}' (SKU: {sku}, Stock: {quantity})")
                 conn.execute(
                     text(
-                        "INSERT INTO products (id, name, description, price, image_url, category_id, subcategory_id, created_at, update_at) "
-                        "VALUES (:id, :name, :description, :price, :image_url, :category_id, :subcategory_id, :created_at, :update_at)"
+                        "INSERT INTO products (id, name, description, price, image_url, category_id, subcategory_id, user_id, sku, stock, created_at, update_at) "
+                        "VALUES (:id, :name, :description, :price, :image_url, :category_id, :subcategory_id, :user_id, :sku, :stock, :created_at, :update_at)"
                     ),
                     {
                         "id": product_id,
@@ -381,40 +379,19 @@ def seed_database():
                         "image_url": mock_image,
                         "category_id": parent_id,
                         "subcategory_id": subcat_id,
-                        "created_at": now,
-                        "update_at": now
-                    }
-                )
-
-                # Seed Inventory for this product
-                inventory_id = uuid.uuid4()
-                sku = f"SKU-{parent_name[:3].upper()}-{sub_name[:3].upper()}-{random.randint(1000, 9999)}"
-                quantity = random.randint(10, 100)
-
-                print(f"SQL: Inserting inventory for product '{product_name}' (SKU: {sku}, Qty: {quantity})")
-                conn.execute(
-                    text(
-                        "INSERT INTO inventory (id, product_id, quantity, sku, created_at, update_at) "
-                        "VALUES (:id, :product_id, :quantity, :sku, :created_at, :update_at)"
-                    ),
-                    {
-                        "id": inventory_id,
-                        "product_id": product_id,
-                        "quantity": quantity,
+                        "user_id": admin_user_id,
                         "sku": sku,
+                        "stock": quantity,
                         "created_at": now,
                         "update_at": now
                     }
                 )
                 product_count += 1
 
-        print(f"✓ Completed seeding {product_count} products and inventories.")
-
-    # 8. Create Superuser Admin
-    create_superuser_admin()
-
-    print("\n🎉 Seeding database roles, permissions, categories, subcategories, products, and admin completed successfully!")
+        print(f"✓ Completed seeding {product_count} products.")
+        print("\n🎉 Seeding database roles, permissions, categories, subcategories, products, and admin completed successfully!")
 
 
 if __name__ == "__main__":
     seed_database()
+
