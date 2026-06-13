@@ -1,39 +1,68 @@
-# Appolo — Premium Glassmorphic E-commerce Storefront
+# <img src="https://raw.githubusercontent.com/microsoft/fluentui-system-icons/master/assets/Gift/SVG/ic_fluid_gift_24_filled.svg" width="32" height="32" align="center" /> Appolo — Premium Glassmorphic E-commerce Storefront
 
-Appolo is a state-of-the-art e-commerce application featuring a premium dark glassmorphism design system on the frontend and a highly secured, rate-limited Python Flask API on the backend.
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+
+Appolo is a state-of-the-art e-commerce application featuring a premium **dark glassmorphism design system** on the frontend and a highly secured, rate-limited **Python Flask REST API** on the backend. 
 
 ---
 
 ## 🚀 Tech Stack
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS 4, Vite 8
-- **Backend**: Flask 3.1, SQLAlchemy ORM, python-dotenv, Flask-Limiter, Marshmallow (Validation & Serialization)
-- **Database**: PostgreSQL (External / Host database)
-- **Containerization**: Docker & Docker Compose
+<table style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="background-color: #1a1a1a;">
+      <th style="border: 1px solid #333; padding: 12px; text-align: left;">Layer</th>
+      <th style="border: 1px solid #333; padding: 12px; text-align: left;">Technologies & Version</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #333; padding: 12px; font-weight: bold;">🖥️ Frontend</td>
+      <td style="border: 1px solid #333; padding: 12px;">React 19, TypeScript, Tailwind CSS 4, Vite 8</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #333; padding: 12px; font-weight: bold;">⚙️ Backend</td>
+      <td style="border: 1px solid #333; padding: 12px;">Flask 3.1, SQLAlchemy ORM, Flask-Limiter, Marshmallow (Validation)</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #333; padding: 12px; font-weight: bold;">🗄️ Database</td>
+      <td style="border: 1px solid #333; padding: 12px;">PostgreSQL, Alembic (Migrations)</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #333; padding: 12px; font-weight: bold;">🐳 Infrastructure</td>
+      <td style="border: 1px solid #333; padding: 12px;">Docker, Docker Compose</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
 ## 📂 Project Architecture
 
 ```text
-├── app/                  # Python Flask API logic
+├── app/                  # Python Flask API Core Logic
 │   ├── config/           # Environment configuration classes
 │   ├── exceptions/       # Global HTTP exception handlers
 │   ├── middleware/       # JWT and authorization middlewares
-│   ├── models/           # SQLAlchemy DB schema models
+│   ├── models/           # SQLAlchemy database schema models
 │   ├── repository/       # Database query abstraction layers
 │   ├── routes/           # REST endpoints with rate-limiting & Blueprints
 │   ├── services/         # Core business logic processing
-│   ├── utils/            # Shared utilities (JWT, database connection, limiter)
-│   └── validators/       # Marshmallow schemas for validating inputs/outputs
-├── frontend/             # React + Vite application
-│   ├── src/              # React components, pages, context, and styles
-│   ├── Dockerfile        # Docker setup for serving the frontend in development
-│   └── vite.config.ts    # Configures proxy endpoints dynamically
+│   ├── utils/            # Shared utilities (JWT, connection helper, limiter)
+│   └── validators/       # Marshmallow input/output validation schemas
+├── frontend/             # React + Vite Client Application
+│   ├── src/              # React components, pages, context, and glassmorphic styles
+│   ├── Dockerfile        # Development Docker configuration for frontend
+│   └── vite.config.ts    # Configures API proxy mappings dynamically
 ├── uploads/              # Bind-mounted directory storing product images
-├── Dockerfile            # Docker setup for running the Flask API
+├── Dockerfile            # Production Docker setup for Flask API
 ├── docker-compose.yml    # Runs frontend and backend services together
-├── .env.dev              # Local development configuration (Tracked for reference)
+├── .env.dev              # Local development configuration
 └── main.py               # Flask application entrypoint
 ```
 
@@ -41,116 +70,137 @@ Appolo is a state-of-the-art e-commerce application featuring a premium dark gla
 
 ## ⚙️ Environment Configuration (`.env.dev`)
 
-The backend configuration is managed through the `.env.dev` file. For reference, the file contains the following key settings:
+The backend configuration is managed through the `.env.dev` file. Key settings:
 
-```env
-HOST="0.0.0.0"
-PORT=5000
-DEBUG=True
-DATABASE_URI=postgresql://abhishek:admin%40123@localhost:5432/website_db
-JWT_SECRET="mySecreatKey"
-```
-
-- **`HOST` / `PORT`**: Dictates the network binding address and port for the Flask server.
-- **`DATABASE_URI`**: PostgreSQL connection string. Inside Docker, this string is automatically overridden to target `host.docker.internal` to reach your host PC.
-- **`JWT_SECRET`**: Signature secret used to verify user JWT auth tokens.
+| Variable | Description | Default / Example Value |
+| :--- | :--- | :--- |
+| **`HOST`** | Network binding address for the Flask server | `0.0.0.0` |
+| **`PORT`** | Listening port for the API server | `5000` |
+| **`DEBUG`** | Toggle Flask debug mode (reloading & verbose logs) | `True` |
+| **`DATABASE_URI`** | PostgreSQL connection URI | `postgresql://abhishek:admin%40123@localhost:5432/website_db` |
+| **`JWT_SECRET`** | Key used to sign authorization JWT tokens | `"mySecreatKey"` |
 
 ---
 
 ## 🛠️ Native Development Setup
 
 ### 1. Prerequisites
-- Python 3.10+
-- Node.js 20+
-- PostgreSQL running locally
+- **Python**: 3.10+
+- **Node.js**: 20+
+- **PostgreSQL**: Installed and running locally
 
-### 2. Backend Setup
-1. Create a virtual environment and activate it:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   ```
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Initialize the database schema and seed mock records:
-   ```bash
-   python "seed script/seed_permissions.py"
-   ```
-4. Run the Flask development server:
-   ```bash
-   python main.py
-   ```
+---
 
-### 3. Frontend Setup
-1. Open a new terminal in the `frontend/` directory and install npm packages:
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. Run the Vite development server:
-   ```bash
-   npm run dev
-   ```
-3. Open your browser and navigate to `http://localhost:5173`.
+### 2. Automated Setup & Run (Recommended)
+
+We provide clean scripts to automate the setup process and launch the servers on both Linux/macOS and Windows:
+
+#### **Linux / macOS**
+
+##### **A. One-Time Setup**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+##### **B. Launch Servers**
+```bash
+chmod +x run.sh
+./run.sh
+```
+> [!TIP]
+> Press `Ctrl+C` in the running terminal to stop both servers gracefully.
+
+---
+
+#### **Windows**
+
+##### **A. One-Time Setup**
+Double-click `setup.bat` or run it from your command prompt:
+```cmd
+setup.bat
+```
+
+##### **B. Launch Servers**
+Double-click `run.bat` or run it from your command prompt:
+```cmd
+run.bat
+```
+*(This starts the backend and frontend dev servers concurrently in separate command prompt windows)*
+
+
+---
+
+### 3. Step-by-Step Manual Launch Guide
+
+If you prefer to configure the components manually, follow these steps in your terminal:
+
+#### **Step 1: Migrate Database**
+Verify that PostgreSQL is running locally, the database `website_db` exists, and the credentials in `.env.dev` are correct.
+Then, execute the following from the project root:
+```bash
+# Initialize and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Run migrations to setup database tables
+python -m alembic upgrade head
+```
+
+#### **Step 2: Run Seed Script**
+Run the seeding script to populate initial roles, permissions, categories, subcategories, and the default admin:
+```bash
+python seed_script.py
+```
+> [!NOTE]
+> Product seeding is skipped by default to keep the catalog clean for your development needs.
+
+#### **Step 3: Run Backend**
+Start the Flask development server:
+```bash
+python main.py
+```
+*The API will run at `http://localhost:5000`.*
+
+#### **Step 4: Run Frontend**
+Open a **new terminal tab/window**, navigate to the `frontend/` directory, and start Vite:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*The storefront will run at `http://localhost:5173`.*
 
 ---
 
 ## 🐳 Docker Compose Deployment
 
-We provide a multi-container Docker environment configuring both the Flask API backend and Vite dev server.
+If you want to run the stack using Docker Compose:
 
-### Running the Application
-Build and launch the containers:
 ```bash
 docker compose up --build
 ```
 
-> [!NOTE]
-> If you encounter a permission denied error when connecting to the Docker socket (e.g., `permission denied while trying to connect to the docker API at unix:///var/run/docker.sock`), run the command with `sudo`:
+> [!WARNING]
+> If you encounter a socket permission error, run the command with `sudo`:
 > ```bash
 > sudo docker compose up --build
 > ```
-> Alternatively, add your current user to the `docker` group by executing `sudo usermod -aG docker $USER` and then log out and back in to apply the changes.
-
-Once the build completes:
-- **Frontend Storefront**: Accessible at `http://localhost:5173`
-- **Backend API**: Accessible at `http://localhost:5000`
 
 ---
 
-## 🔗 Host PC Database Connection (Docker to PC Host)
+## 📂 System Mechanics & Features
 
-When running the backend service in Docker, it needs to connect to the PostgreSQL instance running natively on your host PC.
+### 👤 Default Administrator Credentials
+Use these credentials to log in with full administrative privileges:
+* **Email**: `admin@gmail.com`
+* **Password**: `admin@123`
 
-### How It Works (Host Network Mode)
-Inside `docker-compose.yml`, both the backend and frontend services are configured with:
-```yaml
-network_mode: "host"
-```
-On Linux, this means the Docker containers share the host machine's network namespace directly.
-- **Direct Localhost Connection**: The backend container resolves `localhost` directly to the host PC's `localhost`. Hence, it connects directly to PostgreSQL on port `5432` without requiring you to change PostgreSQL `listen_addresses` configurations or local system firewalls.
-- **Port Bindings**: Because the host network is shared, the services automatically expose port `5000` (Backend API) and port `5173` (Frontend Vite) on your local host interface.
+### 🔗 Host PC Database Connection
+Inside `docker-compose.yml`, services are configured with `network_mode: "host"`. On Linux, this allows Docker containers to share the host network namespace directly, facilitating seamless connection to a local PostgreSQL instance on `localhost:5432`.
 
----
-
-## 💾 Volume Bind Mount (Product Images)
-
-Uploaded product images and files are saved dynamically inside the `./uploads` directory.
-In the backend docker configuration:
-```yaml
-    volumes:
-      - ./uploads:/app/uploads
-```
-This bind mount guarantees that:
-- Any images uploaded by the seller panel inside the container at `/app/uploads` are written directly to your host's local `./uploads` directory.
-- The files persist on your PC even if the containers are rebuilt, stopped, or removed.
-
----
-
-## 🛡️ API Rate Limiter
-All API endpoints are protected using Flask-Limiter.
-- **Limit Configured**: 3 requests per second per IP (`3 per second`).
-- **Enforcement**: Handled at the route controller level using individual `@limiter.limit("3 per second")` function/method decorators.
-- Exceeding the rate limit will yield an HTTP `429 Too Many Requests` status payload.
+### 🛡️ API Rate Limiter
+All API endpoints are protected using **Flask-Limiter** configured to **3 requests per second per IP**. Exceeding this limit will trigger an HTTP `429 Too Many Requests` status response.
