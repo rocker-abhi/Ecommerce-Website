@@ -2,7 +2,7 @@ from flask import Blueprint
 
 from app.routes.authAPI import auth_me, create_user, login, logout, refresh_token, update_profile, reset_password
 from app.routes.dashboardApi import SellerDashboard, HomepageDashboard
-from app.routes.product_api import ProductView
+from app.routes.product_api import ProductView, ReviewView
 from app.routes.cartAPI import CartView
 from app.routes.wishlistAPI import WishlistView
 from app.routes.addressAPI import AddressAPI
@@ -46,8 +46,13 @@ product_bp.add_url_rule(
 )
 product_bp.add_url_rule(
     "/<uuid:product_id>",
-    view_func=ProductView.as_view("delete_product"),
-    methods=["DELETE", "PUT"],
+    view_func=ProductView.as_view("product_detail"),
+    methods=["GET", "DELETE", "PUT"],
+)
+product_bp.add_url_rule(
+    "/<uuid:product_id>/review",
+    view_func=ReviewView.as_view("add_review"),
+    methods=["POST"],
 )
 
 
@@ -94,7 +99,7 @@ address_bp.add_url_rule(
 order_bp.add_url_rule(
     "",
     view_func=OrderAPI.as_view("order_create"),
-    methods=["POST"],
+    methods=["POST", "GET"],
 )
 
 

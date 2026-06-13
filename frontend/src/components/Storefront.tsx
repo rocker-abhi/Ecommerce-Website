@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { type Product } from './Homepage';
+import { ProductDetail } from './ProductDetail';
 
 interface StorefrontProps {
   products: Product[];
@@ -10,7 +11,6 @@ interface StorefrontProps {
   setBuyerPage: React.Dispatch<React.SetStateAction<number>>;
   searchTerm: string;
   selectedCategory: string;
-  setSelectedCategory: React.Dispatch<React.SetStateAction<string>>;
   sortBy: 'default' | 'priceAsc' | 'priceDesc' | 'rating';
   setSortBy: React.Dispatch<React.SetStateAction<'default' | 'priceAsc' | 'priceDesc' | 'rating'>>;
   cart: { product: Product; quantity: number }[];
@@ -36,7 +36,6 @@ export const Storefront: React.FC<StorefrontProps> = ({
   setBuyerPage,
   searchTerm,
   selectedCategory,
-  setSelectedCategory,
   sortBy,
   setSortBy,
   cart,
@@ -54,6 +53,33 @@ export const Storefront: React.FC<StorefrontProps> = ({
 }) => {
   // Product Detail Modal state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Sync with URL query parameter on mount/products load
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prodId = params.get('product_id');
+    if (prodId && products.length > 0) {
+      const found = products.find(p => String(p.id) === String(prodId));
+      if (found) {
+        setSelectedProduct(found);
+      }
+    }
+  }, [products]);
+
+  // Listen for related product clicks inside details page
+  React.useEffect(() => {
+    const handleProductChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const newProdId = customEvent.detail;
+      const found = products.find(p => String(p.id) === String(newProdId));
+      if (found) {
+        setSelectedProduct(found);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener('product_changed', handleProductChanged);
+    return () => window.removeEventListener('product_changed', handleProductChanged);
+  }, [products]);
 
   // Format Amazon style price display
   const formatAmazonPrice = (price: number) => {
@@ -99,123 +125,12 @@ export const Storefront: React.FC<StorefrontProps> = ({
 
   return (
     <>
-      {/* Hero Banner Promo Section */}
-      <div className="max-w-[1500px] mx-auto px-4 mt-4 relative">
-        <div className="bg-gradient-to-r from-cyan-800 to-indigo-900 rounded-lg p-8 md:p-12 text-white shadow-md flex flex-col justify-center min-h-[220px] relative overflow-hidden">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-25 bg-[radial-gradient(circle_at_right,_var(--tw-gradient-stops))] from-yellow-400 via-transparent to-transparent hidden lg:block"></div>
-          
-          <div className="max-w-xl relative z-10 text-left">
-            <span className="bg-[#febd69] text-zinc-900 font-bold text-xs px-2.5 py-1 rounded-sm uppercase tracking-wider">
-              Exclusive Prime Day Savings
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mt-3 text-white">
-              Upgrade your home and office setup.
-            </h2>
-            <p className="text-zinc-200 text-sm mt-2 leading-relaxed">
-              Unlock savings on all selected products. Fast, free delivery with Prime memberships.
-            </p>
-            
-            <div className="flex gap-3 mt-6">
-              <button 
-                onClick={() => setSelectedCategory('Electronics')}
-                className="amazon-btn-primary py-2 px-5 text-xs font-semibold rounded-md cursor-pointer"
-              >
-                Shop Electronics
-              </button>
-              <button 
-                onClick={() => setSelectedCategory('Apparel')}
-                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 py-2 px-5 text-xs font-semibold rounded-md cursor-pointer"
-              >
-                Trending Apparel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* 4-Card Multi-Category Grid Section */}
-      <div className="max-w-[1500px] mx-auto px-4 mt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Box 1 */}
-          <div className="bg-white p-5 border border-zinc-200 shadow-xs flex flex-col justify-between text-left">
-            <div>
-              <h3 className="font-bold text-base text-zinc-900 mb-3">Up to 40% off electronics</h3>
-              <div className="h-32 bg-zinc-100 rounded-sm overflow-hidden mb-3">
-                <img src="https://picsum.photos/id/111/300/200" alt="Tech" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <span 
-              onClick={() => setSelectedCategory('Electronics')}
-              className="text-xs text-[#007185] hover:text-orange-700 hover:underline cursor-pointer font-semibold mt-2 block"
-            >
-              See all electronics
-            </span>
-          </div>
-
-          {/* Box 2 */}
-          <div className="bg-white p-5 border border-zinc-200 shadow-xs flex flex-col justify-between text-left">
-            <div>
-              <h3 className="font-bold text-base text-zinc-900 mb-3">Upgrade your apparel</h3>
-              <div className="h-32 bg-zinc-100 rounded-sm overflow-hidden mb-3">
-                <img src="https://picsum.photos/id/325/300/200" alt="Tech" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <span 
-              onClick={() => setSelectedCategory('Apparel')}
-              className="text-xs text-[#007185] hover:text-orange-700 hover:underline cursor-pointer font-semibold mt-2 block"
-            >
-              Shop premium wear
-            </span>
-          </div>
-
-          {/* Box 3 */}
-          <div className="bg-white p-5 border border-zinc-200 shadow-xs flex flex-col justify-between text-left">
-            <div>
-              <h3 className="font-bold text-base text-zinc-900 mb-3">Home & Kitchen must haves</h3>
-              <div className="h-32 bg-zinc-100 rounded-sm overflow-hidden mb-3">
-                <img src="https://picsum.photos/id/42/300/200" alt="Tech" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <span 
-              onClick={() => setSelectedCategory('Home')}
-              className="text-xs text-[#007185] hover:text-orange-700 hover:underline cursor-pointer font-semibold mt-2 block"
-            >
-              Discover collections
-            </span>
-          </div>
-
-          {/* Box 4 */}
-          <div className="bg-white p-5 border border-zinc-200 shadow-xs flex flex-col justify-between text-left">
-            <div>
-              <h3 className="font-bold text-base text-zinc-900 mb-3">Fitness & Outdoor gear</h3>
-              <div className="h-32 bg-zinc-100 rounded-sm overflow-hidden mb-3">
-                <img src="https://picsum.photos/id/119/300/200" alt="Tech" className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <span 
-              onClick={() => setSelectedCategory('Fitness')}
-              className="text-xs text-[#007185] hover:text-orange-700 hover:underline cursor-pointer font-semibold mt-2 block"
-            >
-              Get active today
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* Main Storefront Product List section */}
       <div className="max-w-[1500px] mx-auto px-4 mt-8 text-left">
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-200 pb-3 mb-6 gap-4">
-          <div>
-            <h3 className="text-xl font-bold text-zinc-950 flex items-center gap-2">
-              Our Selected Products
-              {selectedCategory !== 'All' && (
-                <span className="text-xs font-normal px-2.5 py-0.5 bg-zinc-200 text-zinc-700 rounded-full">
-                  Category: {selectedCategory}
-                </span>
-              )}
-            </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">Explore best-selling items, updated continuously.</p>
-          </div>
+
 
           {/* Filters controls */}
           <div className="flex flex-wrap items-center gap-3">
@@ -571,91 +486,23 @@ export const Storefront: React.FC<StorefrontProps> = ({
         </div>
       )}
 
-      {/* Product Details Detail Modal Popup */}
+      {/* Product Details takeover */}
       {selectedProduct && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-xl bg-white border border-zinc-300 rounded-sm overflow-hidden shadow-2xl flex flex-col relative animate-scale-up text-left text-zinc-900">
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedProduct(null)}
-              className="absolute top-3 right-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-800 p-1.5 rounded-full border border-zinc-300 transition-all z-20 cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Content Body Grid */}
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Left side Image */}
-                <div className="flex-1 max-w-[200px] h-48 bg-zinc-50 flex items-center justify-center border border-zinc-200 p-1 rounded-sm mx-auto">
-                  <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-
-                {/* Right side Metadata */}
-                <div className="flex-1 text-left">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">
-                    {selectedProduct.category} {selectedProduct.subcategory ? `> ${selectedProduct.subcategory}` : ''} Catalog Item
-                  </span>
-                  <h3 className="text-lg font-bold text-zinc-950 leading-snug">{selectedProduct.name}</h3>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center gap-1.5 mt-2.5">
-                    <span className="text-amber-500 font-bold text-sm">★ {selectedProduct.rating} out of 5</span>
-                    <span className="text-zinc-400">|</span>
-                    <span className="text-xs text-[#007185] hover:text-orange-700 cursor-pointer">50+ ratings</span>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-[1px] bg-zinc-200 my-3"></div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-500 text-xs font-semibold">Price:</span>
-                    <span className="text-[#b12704] text-xl font-bold">${selectedProduct.price.toFixed(2)}</span>
-                    <span className="text-[#00a8e1] font-bold text-[10px] italic">✓ prime</span>
-                  </div>
-
-                  <div className="text-xs text-zinc-600 mt-1">
-                    FREE Delivery on qualifying orders.
-                  </div>
-
-                  <div className="text-xs font-bold text-emerald-700 mt-2.5">In Stock.</div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="mt-5 border-t border-zinc-200 pt-4 text-left">
-                <h4 className="font-bold text-xs text-zinc-900 uppercase tracking-wider mb-2">Product Description</h4>
-                <p className="text-zinc-700 text-sm leading-relaxed">
-                  {selectedProduct.description} This high-quality item is selected by Amazon buyers for superior durability and value. Includes manufacturer warranty.
-                </p>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="flex items-center justify-end mt-6 gap-3">
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="amazon-btn-secondary py-2 px-5 text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    addToCart(selectedProduct);
-                    setSelectedProduct(null);
-                  }}
-                  className="amazon-btn-primary py-2 px-6 text-xs font-semibold cursor-pointer"
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="fixed inset-0 bg-slate-900/10 z-50 overflow-y-auto">
+          <ProductDetail
+            productId={selectedProduct.id}
+            onBack={() => {
+              setSelectedProduct(null);
+              const url = new URL(window.location.href);
+              url.searchParams.delete('product_id');
+              window.history.pushState(null, '', url.pathname + url.search);
+            }}
+            addToCart={addToCart}
+            addToWishlist={addToWishlist}
+            removeFromWishlist={removeFromWishlist}
+            wishlist={wishlist}
+            onProceedToCheckout={onProceedToCheckout}
+          />
         </div>
       )}
     </>

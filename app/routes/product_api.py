@@ -156,3 +156,100 @@ class ProductView(MethodView):
             "data": product_data,
         })
         return make_response(jsonify(response_payload))
+
+    def get(self, product_id):
+        from app.models.product import ProductModel
+        product = g.db.query(ProductModel).filter(ProductModel.id == product_id).first()
+        if not product:
+            return make_response(jsonify({"success": False, "message": "Product not found"}), 404)
+
+        reviews_data = []
+        total_rating = 0
+        rating_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        for r in product.reviews:
+            total_rating += r.rating
+            if r.rating in rating_counts:
+                rating_counts[r.rating] += 1
+
+            reviews_data.append({
+                "id": str(r.id),
+                "rating": r.rating,
+                "comment": r.comment,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "user_name": r.user.name if r.user else "Anonymous User",
+                "user_profile_pic": r.user.profile_picture_url if r.user else None
+            })
+
+        review_count = len(product.reviews)
+        average_rating = round(total_rating / review_count, 1) if review_count > 0 else 5.0
+
+        rating_distribution = {}
+        for stars in range(1, 6):
+            rating_distribution[stars] = round((rating_counts[stars] / review_count) * 100, 1) if review_count > 0 else 0.0
+
+        serialized = {
+            "id": str(product.id),
+            "name": product.name,
+            "description": product.description,
+            "price": float(product.price),
+            "image_url": product_service.product_repository._convert_to_base64(product.image_url),
+            "category": product.category.name if product.category else None,
+            "subcategory": product.subcategory.name if product.subcategory else None,
+            "sku": product.sku,
+            "stock": product.stock,
+            "seller": {
+                "name": product.seller.name if product.seller else "Unknown Seller",
+                "email": product.seller.email if product.seller else "Unknown Email"
+            },
+            "reviews": reviews_data,
+            "average_rating": average_rating,
+            "review_count": review_count,
+            "rating_distribution": rating_distribution
+        }
+
+        return make_response(jsonify({
+            "success": True,
+            "message": "Product details retrieved successfully",
+            "data": serialized
+        }))
+
+
+class ReviewView(MethodView):
+    @jwt_required
+    def post(self, product_id):
+        from app.models.product import ProductModel
+        from app.models.review import ReviewModel
+
+        product = g.db.query(ProductModel).filter(ProductModel.id == product_id).first()
+        if not product:
+            return make_response(jsonify({"success": False, "message": "Product not found"}), 404)
+
+        data = request.get_json() or {}
+        rating = data.get("rating")
+        comment = data.get("comment")
+
+        if rating is None:
+            return make_response(jsonify({"success": False, "message": "Rating is required"}), 400)
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError()
+        except ValueError:
+            return make_response(jsonify({"success": False, "message": "Rating must be an integer between 1 and 5"}), 400)
+
+        review = ReviewModel(
+            user_id=g.user_id,
+            product_id=product.id,
+            rating=rating,
+            comment=comment
+        )
+        g.db.add(review)
+        g.db.commit()
+
+        return make_response(jsonify({
+            "success": True,
+            "message": "Review submitted successfully"
+        }), 201)
+

@@ -5,6 +5,7 @@ import { SellerPanel } from './SellerPanel';
 import { AdminPanel } from './AdminPanel';
 import { AccountSettings } from './AccountSettings';
 import { Checkout } from './Checkout';
+import { OrderHistory } from './OrderHistory';
 
 export interface Product {
   id: string | number;
@@ -35,7 +36,7 @@ interface HomepageProps {
 export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc' | 'rating'>('default');
   
   // Cart state
@@ -47,7 +48,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [showWishlist, setShowWishlist] = useState(false);
 
   // Active dashboard view tab state
-  const [activeTab, setActiveTab] = useState<'buyer' | 'seller' | 'admin' | 'settings' | 'checkout'>('buyer');
+  const [activeTab, setActiveTab] = useState<'buyer' | 'seller' | 'admin' | 'settings' | 'checkout' | 'orders'>('buyer');
 
   // Buyer storefront products pagination states
   const [buyerPage, setBuyerPage] = useState(1);
@@ -149,6 +150,8 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
       setActiveTab('admin');
     } else if (tabParam === 'settings') {
       setActiveTab('settings');
+    } else if (tabParam === 'orders') {
+      setActiveTab('orders');
     } else if (tabParam === 'buyer') {
       setActiveTab('buyer');
     } else {
@@ -358,12 +361,15 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
                     Your Account
                   </div>
                   <div className="pt-2">
-                    <a
-                      href="#order-history"
-                      className="block px-4 py-1.5 text-xs text-zinc-700 hover:text-orange-600 hover:underline transition-colors"
+                    <button
+                      onClick={() => {
+                        setActiveTab('orders');
+                        window.history.pushState(null, '', '/?tab=orders');
+                      }}
+                      className="w-full text-left block px-4 py-1.5 text-xs text-zinc-700 hover:text-orange-600 hover:underline transition-colors cursor-pointer bg-transparent border-0"
                     >
                       Order History
-                    </a>
+                    </button>
                     <button
                       onClick={() => {
                         setActiveTab('settings');
@@ -512,7 +518,6 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
           setBuyerPage={setBuyerPage}
           searchTerm={searchTerm}
           selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
           sortBy={sortBy}
           setSortBy={setSortBy}
           cart={cart}
@@ -561,10 +566,19 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
           cart={cart}
           onOrderPlaced={() => {
             setCart([]);
+            setActiveTab('orders');
+            window.history.pushState(null, '', '/?tab=orders');
+          }}
+          onCancel={() => {
             setActiveTab('buyer');
             window.history.pushState(null, '', '/?tab=buyer');
           }}
-          onCancel={() => {
+        />
+      )}
+
+      {activeTab === 'orders' && (
+        <OrderHistory
+          onBack={() => {
             setActiveTab('buyer');
             window.history.pushState(null, '', '/?tab=buyer');
           }}

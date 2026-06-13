@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 from flask import g, jsonify, make_response, request
 from flask.views import MethodView
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.attributes import flag_modified
 from app.middleware.jwt_middleware import jwt_required
 from app.models.cart import CartModel
@@ -12,6 +13,58 @@ from app.models.order_item import OrderItemModel
 from app.models.enums.database_enums import OrderStatus, PaymentStatus
 
 class OrderAPI(MethodView):
+    @jwt_required
+    def get(self):
+        """Return order history for the authenticated user."""
+        user_id = g.user_id
+        orders = (
+            g.db.query(OrderModel)
+            .options(
+                joinedload(OrderModel.order_items).joinedload(OrderItemModel.product),
+                joinedload(OrderModel.payments),
+            )
+            .filter(OrderModel.user_id == user_id)
+            .order_by(OrderModel.created_at.desc())
+            .all()
+        )
+
+        result = []
+        for order in orders:
+            # Collect items
+            items = []
+            for oi in order.order_items:
+                product = oi.product
+                items.append({
+                    "product_id": str(oi.product_id) if oi.product_id else None,
+                    "product_name": product.name if product else "Deleted Product",
+                    "product_image": product.image_url if product else None,
+                    "quantity": oi.quantity,
+                    "unit_price": float(oi.price),
+                    "subtotal": float(oi.price) * oi.quantity,
+                })
+
+            # Latest payment record
+            payment = order.payments[0] if order.payments else None
+
+            result.append({
+                "id": str(order.id),
+                "status": order.status.value,
+                "total_amount": float(order.total_amount),
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+                "items": items,
+                "payment": {
+                    "status": payment.status.value if payment else None,
+                    "method": payment.payment_method if payment else None,
+                    "transaction_id": payment.transaction_id if payment else None,
+                } if payment else None,
+            })
+
+        return make_response(jsonify({
+            "success": True,
+            "message": "Order history retrieved",
+            "data": result,
+        }), 200)
+
     @jwt_required
     def post(self):
         user_id = g.user_id
