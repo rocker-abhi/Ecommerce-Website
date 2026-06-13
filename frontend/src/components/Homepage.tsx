@@ -41,14 +41,7 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   const [showCart, setShowCart] = useState(false);
 
   // Wishlist state
-  const [wishlist, setWishlist] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem('wishlist_items');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [wishlist, setWishlist] = useState<Product[]>([]);
   const [showWishlist, setShowWishlist] = useState(false);
 
   // Active dashboard view tab state
@@ -204,8 +197,38 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
     }
   };
 
+  const mapBackendWishlist = (backendWishlistData: any) => {
+    if (!backendWishlistData || !backendWishlistData.items) return [];
+    return backendWishlistData.items.map((p: any) => {
+      return {
+        id: p.id,
+        name: p.name || 'Unnamed Product',
+        price: parseFloat(p.price) || 0.0,
+        category: p.category || 'Electronics',
+        subcategory: p.subcategory || '',
+        rating: parseFloat(p.rating) || 5.0,
+        image: p.image_url || p.image || 'https://picsum.photos/id/120/400/300',
+        description: p.description || '',
+        sku: p.sku || '',
+        stock: p.stock !== undefined ? p.stock : 50
+      };
+    });
+  };
+
+  const fetchWishlist = async () => {
+    try {
+      const response = await apiClient.get('/wishlist');
+      if (response.data && response.data.success) {
+        setWishlist(mapBackendWishlist(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to fetch wishlist:', err);
+    }
+  };
+
   useEffect(() => {
     fetchCart();
+    fetchWishlist();
   }, []);
 
   // Cart operations
@@ -250,23 +273,26 @@ export const Homepage: React.FC<HomepageProps> = ({ userEmail, onLogout }) => {
   };
 
   // Wishlist operations
-  const addToWishlist = (product: Product) => {
-    setWishlist((prev) => {
-      if (prev.some((p) => p.id === product.id)) {
-        return prev;
+  const addToWishlist = async (product: Product) => {
+    try {
+      const response = await apiClient.post(`/wishlist/${product.id}`);
+      if (response.data && response.data.success) {
+        setWishlist(mapBackendWishlist(response.data.data));
       }
-      const updated = [...prev, product];
-      localStorage.setItem('wishlist_items', JSON.stringify(updated));
-      return updated;
-    });
+    } catch (err) {
+      console.error('Failed to add to wishlist:', err);
+    }
   };
 
-  const removeFromWishlist = (productId: string | number) => {
-    setWishlist((prev) => {
-      const updated = prev.filter((p) => p.id !== productId);
-      localStorage.setItem('wishlist_items', JSON.stringify(updated));
-      return updated;
-    });
+  const removeFromWishlist = async (productId: string | number) => {
+    try {
+      const response = await apiClient.delete(`/wishlist/${productId}`);
+      if (response.data && response.data.success) {
+        setWishlist(mapBackendWishlist(response.data.data));
+      }
+    } catch (err) {
+      console.error('Failed to remove from wishlist:', err);
+    }
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);

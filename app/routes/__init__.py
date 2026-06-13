@@ -4,12 +4,14 @@ from app.routes.authAPI import auth_me, create_user, login, logout, refresh_toke
 from app.routes.dashboardApi import SellerDashboard, HomepageDashboard
 from app.routes.product_api import ProductView
 from app.routes.cartAPI import CartView
+from app.routes.wishlistAPI import WishlistView
 
 # creating Blueprint for the current File
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 product_bp = Blueprint("product", __name__, url_prefix="/product")
 cart_bp = Blueprint("cart", __name__, url_prefix="/cart")
+wishlist_bp = Blueprint("wishlist", __name__, url_prefix="/wishlist")
 
 # Registering Blueprint to the current Blueprint
 auth_bp.add_url_rule("/login", view_func=login, methods=["POST"])
@@ -53,6 +55,19 @@ cart_bp.add_url_rule(
     "/<uuid:product_id>",
     view_func=CartView.as_view("cart_item"),
     methods=["POST", "PUT", "DELETE"],
+)
+
+
+# adding wishlist route
+wishlist_bp.add_url_rule(
+    "",
+    view_func=WishlistView.as_view("wishlist_get"),
+    methods=["GET"],
+)
+wishlist_bp.add_url_rule(
+    "/<uuid:product_id>",
+    view_func=WishlistView.as_view("wishlist_item"),
+    methods=["POST", "DELETE"],
 )
 
 
